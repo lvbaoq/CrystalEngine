@@ -1,23 +1,34 @@
 #include <app\app.h>
 
+/**
+ * A sample application of using Crystal Engine
+ */
+
 using namespace crystal;
 
+/*Declaration of callback methods when collision occurs*/
 void bulletOnCollision(World* world, CollisionPrimitive* bullet, CollisionPrimitive* other);
 void boxOnCollision(World* world, CollisionPrimitive* bullet, CollisionPrimitive* other);
+/* Holds a reference to the ParticleWorld object. Can be used in collision callback methods */
 static ParticleWorld* pWorld;
 
+/*A first-person game. Can walk around and shoot some blocks*/
 class BlockShooter:public Application
 {
 private:
+	//Application-specific attributes
+	//All the attributes below is usd to mock a jump effect
 	bool isJumping = false;
 	float jumpSpeed = 3.0f;
-	float jumpTime;
 	float gravity = 9.8f;
+	float jumpTime;
 	float cameraYPosition;
 public:
-
+	
+	/* This method is called before the game loop starts. It is used to do some initing work */
 	void start()
 	{
+		//Init globle particle world reference
 		pWorld = pworld;
 
 		//Set directional light
@@ -30,38 +41,36 @@ public:
 			Material::pureColorMaterial(glm::vec3(0.45f,0.29f,0.07f)));//A brown ground
 		world->addRigidBody(plane, plane->collider);
 		
-		//Place boxes
-		//Box* ground = new Box(0.0f, 2.0f, -0.8f, 1.0f, 1.0f, 1.0f, worldSize,0.3f,0.1f,0.5f,1.0f);
-		//world->addRigidBody(ground);
-		//ground->setAcceleration(0, -1.0f, 0);
-		//world->addCollider(ground->collider);
-
 		//Place some blocks to shoot
 		Box* box1 = new Box(world,0.0f,5.0f,0.0f,1.0f,1.0f,1.0f,worldSize,Material::obsidian);
 		box1->setAcceleration(0.0f,-1.0f,0.0f);
 		//Set rotation
 		//box1->setOrientation(Quaternion(60.0f, Vector3(1.0f, 0.0f, 0.0f)));
+		//Add the rigidbody and its attached collider to the scene
 		world->addRigidBody(box1, box1->collider);
+		//Add a callback method for the collider. This method is automatically invoked when collision happens
 		world->addCallbackMethod(box1->collider, boxOnCollision);
 
 		Box* box2 = new Box(world, 4.0f, 6.0f, 0.0f, 1.0f, 1.0f, 1.0f, worldSize,Material::pearl);
 		box2->setVelocity(2.0f,0.0f,-1.0f);
 		box2->setAcceleration(0.0f, -1.0f, 0.0f);
-		//Set rotation
-		//box->setOrientation(Quaternion(45.0f, Vector3(1.0f, 0.0f, 0.0f)));
-		//box->angularFactor = 0.1f;
 		world->addRigidBody(box2, box2->collider);
 		world->addCallbackMethod(box2->collider, boxOnCollision);
-		//Add force
+		//Add a constant force
 		//ForceGenerator* f = new ConstantForce(Vector3(1.5f, 1.5f, 0.0f));
 		//world->forceRegistry.add(box, f);
 	}
 
+	/** 
+	 * This method is called every frame before update happens
+	 * You can use this method to display some visual effect by invoking some opengl functions 
+	 */
 	void display()
 	{
 		
 	}
 
+	/* This is the main update function called every frame */
 	void update(float deltaTime)
 	{
 		//Move camera
@@ -82,12 +91,13 @@ public:
 			camera->position.y = yPosition;
 		}
 	}
-
+	/* Display a title on the window */
 	const char* getTitle()
 	{
 		return "Block Shooter";
 	}
 
+	//This method is called before game loop starts
 	void initGraphics(GLFWwindow* window)
 	{
 		//Set graphics options
@@ -161,13 +171,11 @@ public:
 void bulletOnCollision(World* world, CollisionPrimitive* bullet, CollisionPrimitive* other)
 {
 	world->deleteBody(bullet->body);
-	//Box* box = dynamic_cast<Box*>(bullet);
-	//box->setColor(glm::vec4(1.0f,1.0f,1.0f,0.0f));
 }
 
 void boxOnCollision(World* world, CollisionPrimitive* box, CollisionPrimitive* other)
 {
-	if (other->body->tag == "Bullet")
+	if (other->body->tag == "Bullet")//Every body has a 'tag' attribute
 	{
 		world->deleteBody(box->body);
 		//Play some particle effects
@@ -177,7 +185,7 @@ void boxOnCollision(World* world, CollisionPrimitive* box, CollisionPrimitive* o
 		e->play();
 	}	
 }
-
+/* This method is used to tell the main method which application to use */
 Application* getApplication()
 {
 	return new BlockShooter();
