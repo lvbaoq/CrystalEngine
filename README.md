@@ -34,4 +34,6 @@
 * 倾斜的物体碰撞后的旋转效果可能失真
 * 缺乏足够的测试
 
+##示例图片
+![blockShooter](https://github.com/lvbaoq/CrystalEngine/raw/master/sampleImage/bs1.PNG)  
 ----------
