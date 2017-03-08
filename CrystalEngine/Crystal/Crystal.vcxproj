@@ -1,0 +1,181 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\app\app.h" />
+    <ClInclude Include="include\app\camera.h" />
+    <ClInclude Include="include\app\primitives.h" />
+    <ClInclude Include="include\crystal\body.h" />
+    <ClInclude Include="include\crystal\collide_coarse.h" />
+    <ClInclude Include="include\crystal\collide_fine.h" />
+    <ClInclude Include="include\crystal\contact.h" />
+    <ClInclude Include="include\crystal\core.h" />
+    <ClInclude Include="include\crystal\crystal.h" />
+    <ClInclude Include="include\crystal\fgen.h" />
+    <ClInclude Include="include\crystal\particle.h" />
+    <ClInclude Include="include\crystal\pcontacts.h" />
+    <ClInclude Include="include\crystal\pfgen.h" />
+    <ClInclude Include="include\crystal\plinks.h" />
+    <ClInclude Include="include\crystal\precision.h" />
+    <ClInclude Include="include\crystal\pworld.h" />
+    <ClInclude Include="include\crystal\random.h" />
+    <ClInclude Include="include\crystal\world.h" />
+    <ClInclude Include="include\app\shader.h" />
+    <ClInclude Include="src\crystal\body.h" />
+    <ClInclude Include="src\crystal\collide_coarse.h" />
+    <ClInclude Include="src\crystal\collide_fine.h" />
+    <ClInclude Include="src\crystal\contact.h" />
+    <ClInclude Include="src\crystal\core.h" />
+    <ClInclude Include="src\crystal\crystal.h" />
+    <ClInclude Include="src\crystal\fgen.h" />
+    <ClInclude Include="src\crystal\particle.h" />
+    <ClInclude Include="src\crystal\pcontacts.h" />
+    <ClInclude Include="src\crystal\pfgen.h" />
+    <ClInclude Include="src\crystal\plinks.h" />
+    <ClInclude Include="src\crystal\precision.h" />
+    <ClInclude Include="src\crystal\pworld.h" />
+    <ClInclude Include="src\crystal\random.h" />
+    <ClInclude Include="src\crystal\world.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="apps\app.cpp" />
+    <ClCompile Include="apps\blockShooter.cpp" />
+    <ClCompile Include="apps\main.cpp" />
+    <ClCompile Include="src\primitives.cpp" />
+    <ClCompile Include="src\body.cpp" />
+    <ClCompile Include="src\collide_coarse.cpp" />
+    <ClCompile Include="src\collide_fine.cpp" />
+    <ClCompile Include="src\contact.cpp" />
+    <ClCompile Include="src\core.cpp" />
+    <ClCompile Include="src\fgen.cpp" />
+    <ClCompile Include="src\particle.cpp" />
+    <ClCompile Include="src\pcontacts.cpp" />
+    <ClCompile Include="src\pfgen.cpp" />
+    <ClCompile Include="src\plinks.cpp" />
+    <ClCompile Include="src\pworld.cpp" />
+    <ClCompile Include="src\random.cpp" />
+    <ClCompile Include="src\test.cpp" />
+    <ClCompile Include="src\world.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{73654B4C-78D7-452C-B387-09608D11497A}</ProjectGuid>
+    <RootNamespace>Crystal</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>F:\Workspace\CWorkspace\Crystal\Crystal\include;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\Workspace\CWorkspace\Crystal\Crystal\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>F:\Workspace\CWorkspace\Crystal\Crystal\include;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\Workspace\CWorkspace\Crystal\Crystal\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>opengl32.lib;glew32s.lib;glfw3dll.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>opengl32.lib;glew32s.lib;glfw3dll.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>
