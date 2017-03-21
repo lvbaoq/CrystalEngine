@@ -29,11 +29,11 @@ void ParticleWorld::startFrame()
 	
 	int usedCount = 0;
 
-	for (ParticleEffect* pe : particleEffects)
+	for (PEffectPtr pe : particleEffects)
 	{
 		if (!pe->destroyable)
 		{
-			for (Particle* pep : pe->particles)
+			for (ParticlePtr pep : pe->particles)
 			{
 				pep->clearAccumulator();
 			}
@@ -46,19 +46,16 @@ void ParticleWorld::startFrame()
 
 	if (usedCount > Particle_Collect_Gap)
 	{
-		tempList.clear();
-		for (int i = 0; i < particleEffects.size(); i++)
+		for (auto itor = particleEffects.begin(); itor != particleEffects.end();)
 		{
-			if (particleEffects[i]->destroyable)
+			if (itor->get()->destroyable)
 			{
-				delete particleEffects[i];
+				itor = particleEffects.erase(itor);
 			}
-			else
-			{
-				tempList.push_back(particleEffects[i]);
+			else {
+				itor++;
 			}
 		}
-		particleEffects = tempList;
 	}
 }
 
@@ -93,11 +90,11 @@ void ParticleWorld::integrate(real duration)
 		// Remove all forces from the accumulator
 		(*p)->integrate(duration);
 	}
-	for (ParticleEffect* pe : particleEffects)
+	for (PEffectPtr pe : particleEffects)
 	{
 		if (!pe->destroyable) 
 		{
-			for (Particle* pep : pe->particles)
+			for (ParticlePtr pep : pe->particles)
 			{
 				pep->integrate(duration);
 			}
@@ -156,7 +153,7 @@ unsigned GroundContacts::addContact(crystal::ParticleContact *contact,
 		if (y < 0.0f)
 		{
 			contact->contactNormal = crystal::Vector3::UP;
-			contact->particle[0] = *p;
+			contact->particle[0] = p->get();
 			contact->particle[1] = NULL;
 			contact->penetration = -y;
 			contact->restitution = 0.2f;
@@ -171,5 +168,5 @@ unsigned GroundContacts::addContact(crystal::ParticleContact *contact,
 
 void ParticleWorld::addParticleEffect(ParticleEffect* p)
 {
-	particleEffects.push_back(p);
+	particleEffects.emplace_back(p);
 }

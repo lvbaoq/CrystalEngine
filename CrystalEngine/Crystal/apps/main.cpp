@@ -1,3 +1,8 @@
+//Memory leak test
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #include <app\app.h>
 #include <iostream>
 #include <app\shader.h>
@@ -69,9 +74,9 @@ GLfloat squareVertices[] = {
 };
 
 //The application
-extern Application* getApplication();
+extern std::unique_ptr<Application> getApplication();
 
-Application* application;
+std::unique_ptr<Application> application;
 //Time mark
 GLfloat lastFrame = 0.0f;
 GLfloat deltaTime = 0.0f;
@@ -84,6 +89,9 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 int main()
 {
+
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
 	//Bind application
 	application = getApplication();
 	//Init graphics
@@ -216,28 +224,28 @@ int main()
 
 		application->display();//Common Stuff
 		//Draw each rigidbody
-		crystal::World::RigidBodyRegistration* bodyR = application->world->getRigidBodyList();
-		crystal::RigidBody* currentBody;
+		crystal::RigidBodyList bodyList = application->world->getRigidBodyList();
 		
-		while (bodyR)
+		for (auto body : bodyList)
 		{
-			currentBody = bodyR->body;
-			if (bodyR->body->isPrimitive())
+			if (body->isActive)
 			{
-				//Only draw primitive shapes for now
-				Primitive* shape = (Primitive*)currentBody;
-				glBindVertexArray(shape->getVAO());
-				glm::mat4 model = shape->getModelMatrix();
-				//glm::mat4 model;
-				glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-				//Material
-				shape->getMaterial().setMaterialUniform(shader.program);
-				//Draw Call
-				glDrawArrays(GL_TRIANGLES, 0, shape->getVertexNumber());
+				if (body->isPrimitive())
+				{
+					//Only draw primitive shapes for now
+					Primitive* shape = (Primitive*)(body.get());
+					glBindVertexArray(shape->getVAO());
+					glm::mat4 model = shape->getModelMatrix();
+					//glm::mat4 model;
+					glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+					//Material
+					setMaterialUniform(shape->getMaterial(), shader.program);
+					//Draw Call
+					glDrawArrays(GL_TRIANGLES, 0, shape->getVertexNumber());
+				}
 			}
-			//Next body
-			bodyR = bodyR->next;
 		}
+
 		glBindVertexArray(0);
 		
 		//Update particles
@@ -248,7 +256,7 @@ int main()
 		Explosion::program = shader.program;
 		Explosion::modelLoc = modelLoc;	
 
-		for (crystal::ParticleEffect* pe : application->pworld->particleEffects)
+		for (crystal::PEffectPtr pe : application->pworld->particleEffects)
 		{
 			pe->drawEffect(deltaTime);
 		}

@@ -3,6 +3,8 @@
 #include <memory.h>
 using namespace crystal;
 
+unsigned RigidBody::CurrentID = 0;
+
 void RigidBody::addForce(const Vector3& force)
 {
 	forceAccum += force;

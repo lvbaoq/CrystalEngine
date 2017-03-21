@@ -8,10 +8,11 @@
 
 #include "glm\glm.hpp"
 #include "glm\gtc\matrix_transform.inl"
+#include "graphics.h"
 
 #define BOX_VERTEX_NUMBER 36
 #define PLANE_VERTEX_NUMBER 6
-#define PLANE_DRAW_SIZE 35
+#define PLANE_DRAW_SIZE 350
 #define PARTICLE_VERTEX_NUMBER 6
 #define PLANE_THICKNESS 0.01f
 #define DEFAULT_COLOR_R 0.2f
@@ -20,36 +21,13 @@
 #define DEFAULT_COLOR_A 1.0f
 #define DEFAULT_DENSITY 1.0f
 
-/* Representing different materials  */
-class Material
-{
-public:
-	glm::vec3 ambient;//Ambient color
-	glm::vec3 diffuse;//Diffuse color
-	glm::vec3 specular;//Specular color
-	float shininess;//Impacts the scattering/radius of the specular highlight
-
-	Material() { *this = defaultMaterial; }
-
-	Material(glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess) :
-		ambient(ambient), diffuse(diffuse), specular(specular), shininess(shininess) {}
-
-	//Some pre-set materials
-	const static Material emerald;
-	const static Material jade;
-	const static Material obsidian;
-	const static Material pearl;
-	const static Material ruby;
-	const static Material defaultMaterial;
-	static Material pureColorMaterial(glm::vec3 color);
-
-	void setMaterialUniform(GLuint program);
-};
+/* A gloable method to set the material data to the shader's uniform */
+void setMaterialUniform(crystal::Material m, GLuint program);
 
 class Primitive:public crystal::RigidBody
 {
 protected:
-	Material material;
+	crystal::Material material;
 	crystal::Vector3 worldSize;
 	crystal::World* world;
 	
@@ -63,9 +41,9 @@ public:
 	//Get the number of vetex to draw
 	virtual GLint getVertexNumber() { return 0; };
 	//Get the color of the primitive, in RGBA format
-	virtual Material getMaterial() { return material; };
+	virtual crystal::Material getMaterial() { return material; };
 
-	void setMaterial(Material m) { this->material = m; };
+	void setMaterial(crystal::Material m) { this->material = m; };
 
 	virtual ~Primitive() {};
 };
@@ -82,15 +60,15 @@ public:
 
 	Box(crystal::World* world, crystal::real pX, crystal::real pY, crystal::real pZ,
 		crystal::real halfSizeX, crystal::real halfSizeY, crystal::real halfSizeZ,
-		crystal::Vector3 wSize, Material m = Material::defaultMaterial, bool canSleep = true) :
+		crystal::Vector3 wSize, crystal::Material m = crystal::Material::defaultMaterial, bool canSleep = true) :
 		halfSize(halfSizeX, halfSizeY, halfSizeZ)
 	{
 		position = crystal::Vector3(pX, pY, pZ);
 		worldSize = wSize;
-		boxCollider = crystal::CollisionBox();
-		boxCollider.halfSize = halfSize;
-		boxCollider.body = this;
-		collider = &boxCollider;
+		//boxCollider = crystal::CollisionBox();
+		//boxCollider.halfSize = halfSize;
+		//boxCollider.body = this;
+		//collider = &boxCollider;
 		this->world = world;
 
 		material = m;
@@ -115,7 +93,7 @@ public:
 		calculateDerivedData();
 		setCanSleep(canSleep);
 
-		boxCollider.calculateInternals();
+		//boxCollider.calculateInternals();
 	}
 
 	GLint getVertexNumber()
@@ -141,19 +119,16 @@ public:
 	crystal::CollisionPlane planeCollider;
 	crystal::Vector3 normal;
 
-	Plane(crystal::World* world, const crystal::Vector3& planeNormal,
+	Plane(crystal::World* world, crystal::Vector3 planeNormal,
 		crystal::real pX, crystal::real pY, crystal::real pZ,
-		Material m = Material::defaultMaterial,
+		crystal::Material m = crystal::Material::defaultMaterial,
 		crystal::real drawSizeX = PLANE_DRAW_SIZE, crystal::real drawSizeY = PLANE_DRAW_SIZE) :
 		drawSizeX(drawSizeX),drawSizeY(drawSizeY)
 	{
 		position = crystal::Vector3(pX, pY, pZ);
-		planeCollider = crystal::CollisionPlane();
-		planeCollider.direction = planeNormal;
-		planeCollider.offset = 0.0f;
-		planeCollider.body = this;
-		collider = &planeCollider;
+		normal = planeNormal;
 		material = m;
+		setInverseMass(1.0f);
 		
 		//Set up rigid body
 		clearAccumulators();
@@ -196,10 +171,10 @@ public:
 	float maxSpeed;//Max speed of particles
 	float minSpeed;//Min speed of particles
 	float gravity;//Gravity size
-	Material material;
+	crystal::Material material;
 
 	Explosion(crystal::ParticleWorld* pworld,unsigned num, float duration, 
-		float maxSpeed, float minSpeed, float gravity = defalut_gravity,Material m = Material::ruby);
+		float maxSpeed, float minSpeed, float gravity = defalut_gravity, crystal::Material m = crystal::Material::ruby);
 	void play();
 	void init(crystal::Vector3 position);
 	void drawEffect(float deltaTime);

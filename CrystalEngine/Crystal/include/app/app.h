@@ -16,31 +16,49 @@
 
 //Crystal Engine
 #include <crystal\crystal.h>
+//Graphics
+#include <app\graphics.h>
+#include <memory>
+
+#ifdef _DEBUG
+//#define new   new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#endif
 
 #define DEFAULT_SCREEN_WIDTH 800
 #define DEFAULT_SCREEN_HEIGHT 600
 #define DEFAULT_CLEAR_COLOR glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)
 #define DEFAULT_MAX_CONTACT_NUM 20
 #define DEFAULT_MAX_PARTICLE_CONTACT_NUM 50
-#define DEFAULT_WORLD_SIZE 10
+#define DEFAULT_WORLD_SIZE 100
 #define DEFAULT_CONTACT_RESOLVE_ITERATION 8
+
+//Use smart pointers to manage common objects
+using DirectionLightPtr = std::unique_ptr<DirectionalLight>;
+using CameraPtr = std::unique_ptr<Camera>;
+using WorldPtr = std::unique_ptr<crystal::World>;
+using ParticleWorldPtr = std::unique_ptr<crystal::ParticleWorld>;
 
 class Application
 {
 public:
+
+	/* Holds a reference to the ParticleWorld object. Can be used in collision callback methods */
+	static crystal::ParticleWorld* globlePWorld;
+	static crystal::World* globleWorld;
+
 	//Screen width & height
 	int screenWidth;
 	int screenHeight;
 	//Screen ratio
 	float ratio;
 	//Camera object
-	Camera* camera;
+	CameraPtr camera;
 	//Directional lights
-	DirectionalLight* dirLight;
+	DirectionLightPtr dirLight;
 	//3d world object
-	crystal::World* world;
+	WorldPtr world;
 	//Particle world object
-	crystal::ParticleWorld* pworld;
+	ParticleWorldPtr pworld;
 	//Window object of glfw
 	GLFWwindow* glWindow;
 	//Background color. Used to clear screen at each frame
@@ -62,19 +80,16 @@ public:
 	{		
 		runPhysics = true;
 		ratio = (float)width /(float)height;
-		world = new crystal::World(maxContactNum, DEFAULT_CONTACT_RESOLVE_ITERATION);
-		pworld = new crystal::ParticleWorld(maxPContactNum);
+		world.reset(new crystal::World(maxContactNum, DEFAULT_CONTACT_RESOLVE_ITERATION));
+		pworld.reset(new crystal::ParticleWorld(maxPContactNum));
 		worldSize = crystal::Vector3(worldMaxX, worldMaxY, worldMaxZ);
-		camera = new Camera{ ratio };
-		dirLight = NULL;
+		camera.reset(new Camera{ ratio });
+		dirLight.reset(new DirectionalLight());
+		Application::globleWorld = world.get();
+		Application::globlePWorld = pworld.get();
 	}
 
-	~Application()
-	{
-		delete dirLight;
-		delete camera;
-		delete world;
-	}
+	virtual ~Application() {}
 
 	static crystal::Vector3 getVector3(const glm::vec3& glmVec);
 
@@ -174,3 +189,17 @@ public:
 
 
 };
+
+/* Some helper functions */
+//Factory methods to add primitives to scene
+Box* createBox(crystal::Vector3 position, crystal::Vector3 halfSize,
+	crystal::Material m = crystal::Material::defaultMaterial,
+	bool addCollider = true, bool canSleep = true);
+
+Plane* createPlane(crystal::Vector3 planeNormal, crystal::Vector3 position,
+	crystal::Material m = crystal::Material::defaultMaterial, bool addCollider = true, bool canSleep = true,
+	float drawSizeX = PLANE_DRAW_SIZE, float drawSizeY = PLANE_DRAW_SIZE);
+
+//Factory methods to add particle effects to the scene
+Explosion* createExplosion(unsigned num,
+	float duration, float maxSpeed, float minSpeed, float gravity, crystal::Material m);

@@ -16,8 +16,17 @@ namespace crystal {
 	class CollisionPrimitive
 	{
 	public:
+		CollisionPrimitive():isActive(true)
+		{
+			id = CollisionPrimitive::CurrentId++;
+		}
+
+		virtual ~CollisionPrimitive() {}
+
+		unsigned getId() { return id; }
+
 		//Only active primitive can generate contacts
-		bool isActive = true;
+		bool isActive;
 
 		virtual int getTag() const{ return 0; };
 		/**
@@ -71,6 +80,10 @@ namespace crystal {
 		* with the transform of the rigid body.
 		*/
 		Matrix4 transform;
+
+		unsigned id;
+	private:
+		static unsigned CurrentId;
 	};
 
 	/**

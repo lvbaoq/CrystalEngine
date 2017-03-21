@@ -3,8 +3,9 @@
 #include "contact.h"
 #include "fgen.h"
 #include "collide_fine.h"
+#include <memory>
 
-#define DEFAULT_COLLECT_GAP 10
+#define DEFAULT_COLLECT_GAP 2
 
 #ifndef CallbackMethods
 #define CallbackMethod(name) void(*name)(World* world,CollisionPrimitive* thisBody,CollisionPrimitive* other)
@@ -16,25 +17,18 @@
 #endif // !CallbackList
 
 
+
 namespace crystal {
+
+	using BodyPtr = std::shared_ptr<RigidBody>;
+	using ColliderPtr = std::shared_ptr<CollisionPrimitive>;
+	using RigidBodyList = std::vector<BodyPtr>;
+	using ColliderList = std::vector<ColliderPtr>;
 
 	class World
 	{
 	public:
-		/**
-		* Holds a single rigid body in a linked list of bodies.
-		*/
-		struct RigidBodyRegistration
-		{
-			RigidBody* body;
-			CollisionPrimitive* collider;//The collision Primitive of the rigidbody
-			RigidBodyRegistration* next;
-
-			~RigidBodyRegistration()
-			{
-				delete body;
-			}
-		};
+		
 		//Holds all the forces to apply
 		ForceRegistry forceRegistry;
 	private:
@@ -44,15 +38,22 @@ namespace crystal {
 		 */
 		bool calculateIterations;
 
-		//First element of the linked list
-		RigidBodyRegistration* first;
+		/**
+		* Holds a rigidbody's id and its corresponding colliders
+		* Currently it is a one-one relation.
+		*/
+		struct RigidBodyRegistration
+		{
+			unsigned bodyId;
+			unsigned colliderId;
 
-		//Current element of the linked list
-		RigidBodyRegistration* current;
-		
-		//The rigidbody removed from the linked list
-		RigidBodyRegistration* deleteFirst;
-		RigidBodyRegistration* deleteCurrent;
+			RigidBodyRegistration(unsigned bid,unsigned cid):bodyId(bid),colliderId(cid){}
+		};
+
+		std::vector<RigidBodyRegistration> bodyColliderReg;
+
+		/*Holds the list of rigidbodies*/
+		RigidBodyList bodyList;
 
 		/**
 		* Holds the resolver for sets of contacts.
@@ -69,13 +70,12 @@ namespace crystal {
 		};
 
 		/* Holds the list of colliders. Only support primitive colliders now */
-		std::vector<CollisionPrimitive*> colliders;
-		//Used to swap collider lists. See method removeInactiveColliders
-		std::vector<CollisionPrimitive*> tempColliderList;
-		//Holds number of colliders
-		unsigned colliderCount;
-		//Holds number of active colliders
-		unsigned activeColliderCount;
+		ColliderList colliders;
+
+		//Holds number of rigidbodys
+		unsigned bodyCount;
+		//Holds number of active rigidbodys
+		unsigned activeBodyCount;
 		//When the difference between colliderCount and activeColliderCount is larger than this gap, 
 		//collider list is re-allocated to remove all inactive colliders
 		int collectGap;
@@ -113,6 +113,10 @@ namespace crystal {
 
 		std::vector<ColliderCallbackIndex> indexList;
 
+		CollisionPrimitive* getAttachedCollider(RigidBody* body);
+
+		void resetColliderBodies();
+
 	public:
 		/**
 		* Creates a new simulator that can handle up to the given
@@ -125,11 +129,11 @@ namespace crystal {
 		
 		~World();
 
-		void addCallbackMethod(CollisionPrimitive* collider,CallbackMethod(method));
+		void addCallbackMethod(RigidBody* body,CallbackMethod(method));
 
-		RigidBodyRegistration* getRigidBodyList()
+		RigidBodyList& getRigidBodyList()
 		{
-			return first;
+			return bodyList;
 		}
 
 		void addRigidBody(RigidBody* const body, CollisionPrimitive* const collider = NULL);
@@ -138,7 +142,7 @@ namespace crystal {
 		void deleteBody(RigidBody* body);
 		
 		//The method deleteBody uses a lazy delete strategy. Call this method to remove all inActive colliders in list
-		void removeInActiveColliders();
+		void removeInActiveBodies();
 
 		/**
 		* Calls each of the registered contact generators to report

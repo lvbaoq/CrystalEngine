@@ -3,10 +3,9 @@
 using namespace crystal;
 
 World::World(unsigned maxContacts, unsigned iterations):
-	first(NULL),deleteFirst(NULL),
 	resolver(maxContacts*iterations),
 	firstContactGen(NULL),
-	maxContacts(maxContacts), colliderCount(0),activeColliderCount(0),
+	maxContacts(maxContacts), bodyCount(0),activeBodyCount(0),
 	colliders(),collectGap(DEFAULT_COLLECT_GAP),collisionCallbacks(0),indexList(0)
 {
 	contacts = new Contact[maxContacts];
@@ -16,22 +15,12 @@ World::World(unsigned maxContacts, unsigned iterations):
 
 World::~World() 
 {
-	RigidBodyRegistration* rb = first;
-	RigidBodyRegistration* next;
-	while (rb->next)
-	{
-		next = rb->next;
-		delete rb;
-		rb = next;
-	}
-	delete rb;
-
 	delete[] contacts;
-
 }
 
-void World::addCallbackMethod(CollisionPrimitive* collider, CallbackMethod(method))
+void World::addCallbackMethod(RigidBody* body, CallbackMethod(method))
 {
+	CollisionPrimitive* collider = getAttachedCollider(body);
 	unsigned currentIndex = collisionCallbacks.size();
 	collisionCallbacks.push_back(method);
 	ColliderCallbackIndex index;
@@ -42,46 +31,36 @@ void World::addCallbackMethod(CollisionPrimitive* collider, CallbackMethod(metho
 
 void World::startFrame()
 {
-	RigidBodyRegistration* br = first;
-	while (br)
+	for (auto body: bodyList)
 	{
-		br->body->clearAccumulators();
-		br->body->calculateDerivedData();
-		br = br->next;
+		body->clearAccumulators();
+		body->calculateDerivedData();
 	}
-	for (int i = 0; i < colliderCount; i++)
+
+	for (auto collider : colliders)
 	{
-		if(colliders[i]->isActive)
-			colliders[i]->calculateInternals();
+		if (collider->isActive)
+			collider->calculateInternals();
 	}
 }
 
 void World::addCollider(CollisionPrimitive* collider)
 {
-	colliderCount++;
-	activeColliderCount++;
-	colliders.push_back(collider);
+	colliders.emplace_back(collider);
 }
 
 void World::addRigidBody(RigidBody* const body,CollisionPrimitive* const collider)
 {
-	RigidBodyRegistration* br = new RigidBodyRegistration();
-	br->body = body;
-	br->collider = collider;
-	br->next = NULL;
-	if (first == NULL)
-	{
-		current = first = br;
-	}
-	else {
-		current->next = br;
-		current = br;
-	}
+	bodyCount++;
+	activeBodyCount++;
+
+	bodyList.emplace_back(body);
+
 	if (collider)
 	{
 		addCollider(collider);
-	}
-	
+		bodyColliderReg.emplace_back(body->getId(), collider->getId());
+	}	
 }
 
 void World::runPhysics(real duration)
@@ -90,11 +69,9 @@ void World::runPhysics(real duration)
 	forceRegistry.updateForces(duration);
 
 	//Integrate bodies
-	RigidBodyRegistration* br = first;
-	while (br)
+	for (auto body : bodyList)
 	{
-		br->body->integrate(duration);
-		br = br->next;
+		body->integrate(duration);
 	}
 
 	// Generate contacts
@@ -107,76 +84,50 @@ void World::runPhysics(real duration)
 
 void World::deleteBody(RigidBody* body)
 {
-	RigidBodyRegistration* br = first;
-	RigidBodyRegistration* pre = NULL;
-	RigidBodyRegistration* next = NULL;
-	while (br!= NULL)
+	body->isActive = false;
+	activeBodyCount--;
+	CollisionPrimitive* collider = getAttachedCollider(body);
+	if (collider)
 	{
-		next = br->next;
+		collider->isActive = false;
+	}
+}
 
-		if (br->body == body)
+void World::removeInActiveBodies()
+{
+	//No body to remove
+	if (activeBodyCount == bodyCount) return;
+	
+	//Remove inactive colliders
+	for (auto itor = colliders.begin(); itor != colliders.end();)
+	{
+		if (!(*itor)->isActive)
 		{
-			br->next = NULL;
-			//Found body, Delete it
-			if (pre)
-			{
-				pre->next = next;
-			}
-			//delete collider. Use a lazy delete here.
-			if (br->collider)
-			{
-				br->collider->isActive = false;
-				activeColliderCount--;
-			}
-			//Record this body
-			if (deleteFirst == NULL)
-			{
-				deleteCurrent = deleteFirst = br;
-			}
-			else 
-			{
-				deleteCurrent->next = br;
-				deleteCurrent = br;
-			}
+			itor = colliders.erase(itor);
 		}
 		else
 		{
-			pre = br;
+			itor++;
 		}
-
-		br = next;		
 	}
-	if (pre != NULL)
-		current = pre;
-	else
-		current = NULL;
-}
-
-void World::removeInActiveColliders()
-{
-	//No colliders to remove
-	if (activeColliderCount == colliderCount) return;
-	tempColliderList.clear();
-	for (int i = 0; i < colliders.size(); i++)
+	
+	//Remove inactive rigidbodies
+	for (auto itor = bodyList.begin(); itor != bodyList.end();)
 	{
-		if (colliders[i]->isActive)
+		if (!(itor->get()->isActive))
 		{
-			tempColliderList.push_back(colliders[i]);
+			itor = bodyList.erase(itor);
+		}
+		else
+		{
+			itor++;
 		}
 	}
-	colliders.clear();
-	colliders = tempColliderList;
-	colliderCount = activeColliderCount;
-	//Clear removed rigidbodies
-	RigidBodyRegistration* rb = deleteFirst;
-	RigidBodyRegistration* next;
-	while (rb->next)
-	{
-		next = rb->next;
-		delete rb;
-		rb = next;
-	}
-	delete rb;
+	
+	//We have to reset the body pointer in colliders because the original pointer may have moved
+	resetColliderBodies();
+
+	bodyCount = activeBodyCount;	
 }
 
 unsigned World::generateContacts()
@@ -187,10 +138,10 @@ unsigned World::generateContacts()
 	cData.restitution = (crystal::real)0.2;
 	cData.tolerance = (crystal::real)0.1;
 	unsigned result = 0;
-	//Trigger collider deletion. Remove all inactive colliders
-	if (colliderCount - activeColliderCount >= collectGap)
+	//Trigger body deletion. Remove all inactive bodies and colliders
+	if (bodyCount - activeBodyCount >= collectGap)
 	{
-		removeInActiveColliders();
+		removeInActiveBodies();
 	}
 
 	// Perform collision detection
@@ -198,17 +149,19 @@ unsigned World::generateContacts()
 	// TODO: Use workable bounding volumn trees to speed up calculation
 	CollisionPrimitive* currentCollider;
 	CollisionPrimitive* checkCollider;
-	for (int i = 0; i < colliderCount; i++)
+
+	for (int i = 0; i < colliders.size(); i++)
 	{	
-		currentCollider = colliders.at(i);
+		currentCollider = colliders[i].get();
 
-		if (!currentCollider->isActive) continue;
+		if (!(currentCollider->isActive)) continue;
 
-		for (int j = i+1; j < colliderCount; j++)
+		for (int j = i+1; j < colliders.size(); j++)
 		{
 			//Check contacts with the rest colliders
-			checkCollider = colliders.at(j);
-			if (!checkCollider->isActive) continue;
+			checkCollider = colliders[j].get();
+
+			if (!(checkCollider->isActive)) continue;
 			unsigned genCountactNum = CollisionDetector::primitiveCollide(*currentCollider, *checkCollider, &cData);
 			if (genCountactNum > 0)
 			{
@@ -230,4 +183,53 @@ unsigned World::generateContacts()
 	}
 
 	return result;
+}
+
+CollisionPrimitive* World::getAttachedCollider(RigidBody* body)
+{
+	unsigned cid = -1;
+	for (auto reg : bodyColliderReg)
+	{
+		if (reg.bodyId == body->getId())
+		{
+			cid = reg.colliderId;
+		}
+	}
+	if (cid == -1)
+		return nullptr;
+
+	for (auto collider : colliders)
+	{
+		if (collider->getId() == cid)
+		{
+			return collider.get();
+		}
+	}
+	return nullptr;
+}
+
+void World::resetColliderBodies()
+{
+	for (auto c : colliders)
+	{
+		//Get body id
+		unsigned bid = -1;
+		for (auto reg : bodyColliderReg)
+		{
+			if (reg.colliderId == c->getId())
+			{
+				bid = reg.bodyId;
+				break;
+			}				
+		}
+		//find body
+		for (auto b : bodyList)
+		{
+			if (b->getId() == bid)
+			{
+				c->body = b.get();
+				break;
+			}
+		}
+	}
 }

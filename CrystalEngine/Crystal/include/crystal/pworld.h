@@ -5,6 +5,7 @@
 
 #include "pfgen.h"
 #include "plinks.h"
+#include <memory>
 
 //Use lazy deletion for particle effects. 
 //When number of destroyable effects is larger than this gap, deletion is triggered
@@ -15,7 +16,12 @@
 
 
 namespace crystal {
+
 	class ParticleEffect;
+
+	using PEffectPtr = std::shared_ptr<ParticleEffect>;
+	using ParticlePtr = std::shared_ptr<Particle>;
+
 	/**
 	* Keeps track of a set of particles, and provides the means to
 	* update them all.
@@ -23,9 +29,9 @@ namespace crystal {
 	class ParticleWorld
 	{
 	public:
-		typedef std::vector<Particle*> Particles;
-		typedef std::vector<ParticleEffect*> ParticleEffects;
-		typedef std::vector<ParticleContactGenerator*> ContactGenerators;
+		using Particles = std::vector<ParticlePtr>;
+		using ParticleEffects = std::vector<PEffectPtr>;
+		using ContactGenerators = std::vector<ParticleContactGenerator*>;
 
 	protected:
 		/**

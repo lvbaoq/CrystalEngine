@@ -107,12 +107,25 @@ namespace crystal {
 		*/
 		real motion;
 
+		int id;//Id is used to uniquely mark rigidbodies
+
+	private:
+		static unsigned CurrentID;
+
 	public:
 
-		RigidBody():tag(""),canSleep(true), linearFactor(1.0f), angularFactor(1.0f){}
+		unsigned getId()
+		{
+			return id;
+		}
+
+		RigidBody() :tag(""), canSleep(true), linearFactor(1.0f), angularFactor(1.0f), isActive(true) 
+		{ id = RigidBody::CurrentID++; }
 
 		/* A tag string attached to the rigidbody */
 		String tag;
+		/*If a rigidbody is not active, it can not be seen in the scene*/
+		bool isActive;
 
 		/**  A factor controls how fast the body moves.
 		* The linear acceleration is multiplied by this value before velocity calculation

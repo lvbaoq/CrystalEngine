@@ -7,31 +7,6 @@ GLuint Explosion::particleVAO = 0;
 GLuint Explosion::program = 0;
 GLuint Explosion::modelLoc = 0;
 
-//Pre-set materials
-const Material Material::defaultMaterial(glm::vec3(1.0f, 1.0f, 1.0f),
-	glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.1f, 0.1f, 0.1f), 0.5f);
-
-const Material Material::emerald(glm::vec3(0.022f,0.174f,0.022f),
-	glm::vec3(0.076f,0.614f,0.076f), glm::vec3(0.633f,0.728f,0.633f),0.6f);
-
-const Material Material::jade(glm::vec3(0.135f, 0.223f, 0.158f),
-	glm::vec3(0.54f, 0.89f, 0.63f), glm::vec3(0.316f, 0.316f, 0.316f), 0.1f);
-
-const Material Material::obsidian(glm::vec3(0.054f, 0.05f, 0.066f),
-	glm::vec3(0.183f, 0.17f, 0.23f), glm::vec3(0.33f, 0.33f, 0.35), 0.3f);
-
-const Material Material::pearl(glm::vec3(0.25f, 0.207f, 0.021f),
-	glm::vec3(1.0f, 0.829f, 0.829f), glm::vec3(0.297f, 0.297f, 0.297f), 0.088f);
-
-const Material Material::ruby(glm::vec3(0.175f, 0.012f, 0.012f),
-	glm::vec3(0.614f, 0.041f, 0.041f), glm::vec3(0.728f, 0.627f, 0.627f), 0.6f);
-
-Material Material::pureColorMaterial(glm::vec3 color)
-{
-	Material m(color, color, color, 0.5f);
-	return m;
-}
-
 glm::mat4 Box::getModelMatrix()
 {
 	glm::mat4 model;
@@ -74,20 +49,20 @@ glm::mat4 Plane::getModelMatrix()
 	model = glm::rotate(model,crystal::radians(90), glm::vec3(1.0f, 0.0f, 0.0f));
 
 	//Scale the matrix
-	glm::vec3 glScale(drawSizeX*10, drawSizeX * 10,1.0f);
+	glm::vec3 glScale(drawSizeX, drawSizeX,1.0f);
 	model = glm::scale(model, glScale);
 
 	return model;
 }
 
 Explosion::Explosion(crystal::ParticleWorld* pworld,unsigned num,
-	float duration, float maxSpeed, float minSpeed, float gravity,Material m) :
+	float duration, float maxSpeed, float minSpeed, float gravity, crystal::Material m) :
 	num(num), duration(duration), maxSpeed(maxSpeed), minSpeed(minSpeed),gravity(gravity),material(m)
 {
 	this->pworld = pworld;
 	isPlaying = false;
 	destroyable = false;
-	m = Material::ruby;//Default material
+	m = crystal::Material::ruby;//Default material
 }
 
 void Explosion::init(crystal::Vector3 position)
@@ -110,7 +85,7 @@ void Explosion::init(crystal::Vector3 position)
 	
 		p->setVelocity(direction * crystal::Random::getRandom(minSpeed,maxSpeed));
 		p->setPosition(position);
-		particles.push_back(p);
+		particles.emplace_back(p);
 	}
 
 	pworld->addParticleEffect(this);
@@ -133,7 +108,7 @@ void Explosion::drawEffect(float deltaTime)
 	}
 
 	glBindVertexArray(particleVAO);
-	for (crystal::Particle* p : particles)
+	for (crystal::ParticlePtr p : particles)
 	{
 		//generate model matrix
 		glm::mat4 model;
@@ -141,7 +116,7 @@ void Explosion::drawEffect(float deltaTime)
 		model = glm::translate(model, glm::vec3(p->getPosition().x, p->getPosition().y, p->getPosition().z));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		//Material
-		material.setMaterialUniform(program);
+		setMaterialUniform(material,program);
 		//Draw
 		glDrawArrays(GL_TRIANGLES, 0, PARTICLE_VERTEX_NUMBER);
 	}
@@ -156,10 +131,6 @@ void Explosion::play()
 
 Explosion::~Explosion()
 {
-	for (crystal::Particle* p : particles)
-	{
-		delete p;
-	}
 	particles.clear();
 }
 
@@ -177,15 +148,16 @@ void DirectionalLight::setViewPosition(float x, float y, float z)
 	glUniform3f(viewPosLoc,x,y,z);
 }
 
-void Material::setMaterialUniform(GLuint program)
+//Helper functions
+void setMaterialUniform(crystal::Material m, GLuint program)
 {
 	GLint matAmbientLoc = glGetUniformLocation(program, "material.ambient");
 	GLint matDiffuseLoc = glGetUniformLocation(program, "material.diffuse");
 	GLint matSpecularLoc = glGetUniformLocation(program, "material.specular");
 	GLint matShineLoc = glGetUniformLocation(program, "material.shininess");
 
-	glUniform3f(matAmbientLoc,ambient.x,ambient.y,ambient.z);
-	glUniform3f(matDiffuseLoc, diffuse.x,diffuse.y,diffuse.z);
-	glUniform3f(matSpecularLoc, specular.x,specular.y,specular.z);
-	glUniform1f(matShineLoc,shininess);
+	glUniform3f(matAmbientLoc, m.ambient.x, m.ambient.y, m.ambient.z);
+	glUniform3f(matDiffuseLoc, m.diffuse.x, m.diffuse.y, m.diffuse.z);
+	glUniform3f(matSpecularLoc, m.specular.x, m.specular.y, m.specular.z);
+	glUniform1f(matShineLoc, m.shininess);
 }

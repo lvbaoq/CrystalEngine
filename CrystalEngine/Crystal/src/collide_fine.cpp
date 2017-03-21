@@ -3,6 +3,8 @@
 
 using namespace crystal;
 
+unsigned CollisionPrimitive::CurrentId = 0;
+
 unsigned CollisionDetector::primitiveCollide(
 	const CollisionPrimitive& p1,
 	const CollisionPrimitive& p2, CollisionData *data)
