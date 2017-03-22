@@ -51,6 +51,9 @@ public:
 	int screenHeight;
 	//Screen ratio
 	float ratio;
+	//Graphics settings
+	/*The sample number of each fragment for MASS effect. Default is 0. Set a value larger than 0 to enable MSAA*/
+	unsigned MSAASampleNum;
 	//Camera object
 	CameraPtr camera;
 	//Directional lights
@@ -76,7 +79,7 @@ public:
 		float worldMaxX = DEFAULT_WORLD_SIZE,
 		float worldMaxY = DEFAULT_WORLD_SIZE,
 		float worldMaxZ = DEFAULT_WORLD_SIZE):
-		screenWidth(width),screenHeight(height),pause(false)
+		screenWidth(width),screenHeight(height),pause(false),MSAASampleNum(0)
 	{		
 		runPhysics = true;
 		ratio = (float)width /(float)height;
@@ -94,6 +97,23 @@ public:
 	static crystal::Vector3 getVector3(const glm::vec3& glmVec);
 
 	/**
+	 * Set some graphic settings before creating gl window objcet
+	 * e.g. Set msaa sample number
+	 */
+	virtual void initGraphicSettings();
+
+	/**
+	* Sets up the graphics, and allows the application to acquire
+	* graphical resources. Guaranteed to be called after OpenGL is
+	* set up.
+	*
+	* @param window The window object to manipulate
+	*
+	* The default implementation sets up a basic view
+	*/
+	virtual void initGraphics(GLFWwindow* window);
+
+	/**
 	* Called before main loop starts
 	* Used to init scenes
 	* The default implementation does nothing
@@ -106,17 +126,6 @@ public:
 	* The default implementation returns a generic title.
 	*/
 	virtual const char* getTitle();
-
-	/**
-	* Sets up the graphics, and allows the application to acquire
-	* graphical resources. Guaranteed to be called after OpenGL is
-	* set up.
-	*
-	* @param window The window object to manipulate
-	*
-	* The default implementation sets up a basic view
-	*/
-	virtual void initGraphics(GLFWwindow* window);
 
 	/**
 	* Called each frame to display the current scene. The common code

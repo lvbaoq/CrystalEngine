@@ -23,6 +23,8 @@ crystal::Vector3 Application::getVector3(const glm::vec3& glmVec)
 	return Vector3(glmVec.x, glmVec.y, glmVec.z);
 }
 
+void Application::initGraphicSettings() {}
+
 void Application::start(){}
 
 void Application::display(){}

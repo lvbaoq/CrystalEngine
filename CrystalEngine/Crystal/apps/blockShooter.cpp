@@ -22,6 +22,8 @@ private:
 	float gravity = 9.8f;
 	float jumpTime;
 	float cameraYPosition;
+
+	unsigned sampleNum = 4;
 public:
 
 	/* This method is called before the game loop starts. It is used to do some initing work */
@@ -88,6 +90,12 @@ public:
 		return "Block Shooter";
 	}
 
+	void initGraphicSettings()
+	{
+		//Some settings to take effect before creating gl window 
+		MSAASampleNum = sampleNum;
+	}
+
 	//This method is called before game loop starts
 	void initGraphics(GLFWwindow* window)
 	{
@@ -95,7 +103,10 @@ public:
 		glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);//No resize
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);//Hide cursor
 
-																	//Call parent methods to finish initialization
+		//Set MSAA sample number
+		MSAASampleNum = sampleNum;
+
+		//Call parent methods to finish initialization
 		Application::initGraphics(window);
 	}
 

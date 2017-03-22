@@ -100,6 +100,14 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	
+	application->initGraphicSettings();
+
+	//Check MSAA settings
+	if (application->MSAASampleNum > 0)
+	{
+		glfwWindowHint(GLFW_SAMPLES, application->MSAASampleNum);
+	}
+	
 	GLFWwindow* window = glfwCreateWindow(application->screenWidth, application->screenHeight, 
 		application->getTitle(), nullptr, nullptr);
 
@@ -121,11 +129,13 @@ int main()
 		std::cout << "Failed to initialize GLEW" << std::endl;
 	}
 	glfwMakeContextCurrent(window);
-	// Setup OpenGL options
-	glEnable(GL_DEPTH_TEST);
 
 	//Call application's initialization method after setup
 	application->initGraphics(window);
+
+	// Setup OpenGL options
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_MULTISAMPLE);
 
 	//Add callback methods
 	glfwSetKeyCallback(window, key_callback);
