@@ -84,6 +84,7 @@ void crystal::SkyBox::loadCubeMap()
 		glTexImage2D(
 			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
 			GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+		SOIL_free_image_data(image);
 	}
 	//Set texture attributes
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -105,3 +106,73 @@ crystal::SkyBox::SkyBox()
 	faces[4] = DEFAULT_SKYBOX_FACE_BACK;
 	faces[5] = DEFAULT_SKYBOX_FACE_FRONT;
 }
+
+crystal::PostProcessing::PostProcessing(const char * fragmentShaderPath):
+	isKernel(false),shaderinitialized(false),shader(false)
+{
+	kernelOffset = DEFAULT_KERNEL_OFFSET;
+	fShaderPath = fragmentShaderPath;
+}
+
+crystal::PostProcessing::PostProcessing(GLfloat * kernelValues):
+	isKernel(true),shaderinitialized(false),shader(false)
+{
+	fShaderPath = POST_PROCESSING_FRAG_PATH_KERNEL;
+	kernelOffset = DEFAULT_KERNEL_OFFSET;
+	for (int i = 0; i < KERNEL_VALUE_NUM; i++)
+	{
+		kernel[i] = kernelValues[i];
+	}
+}
+
+void crystal::PostProcessing::initShader()
+{
+	shader.initShader(POST_PROCESSING_VSHADER_PATH, fShaderPath);
+	shaderinitialized = true;
+}
+
+void crystal::PostProcessing::useShader()
+{
+	if (!isKernel)
+	{
+		shader.useShader();
+		return;
+	}
+	//Is kernel effect
+	//Use program
+	shader.useShader();
+	//Set uniforms
+	glUniform1f(glGetUniformLocation(shader.program, KERNEL_OFFSET_UNIFORM), kernelOffset);
+	glUniform1fv(glGetUniformLocation(shader.program, KERNEL_UNIFORM), KERNEL_VALUE_NUM, kernel);
+}
+
+PostProcessing PostProcessing::Inversion(POST_PROCESSING_FRAG_PATH_INVERSION);
+PostProcessing PostProcessing::Grayscale(POST_PROCESSING_FRAG_PATH_GRAYSCALE);
+
+GLfloat sharpenKernel[9] = {
+	-1, -1, -1,
+	-1, 9, -1,
+	-1, -1, -1
+};
+PostProcessing PostProcessing::Sharpen(sharpenKernel);
+
+GLfloat blurKernel[9] = {
+	1.0 / 16, 2.0 / 16, 1.0 / 16,
+	2.0 / 16, 4.0 / 16, 2.0 / 16,
+	1.0 / 16, 2.0 / 16, 1.0 / 16
+};
+PostProcessing PostProcessing::Blur(blurKernel);
+
+GLfloat edKernel[9] = {
+	1, 1, 1,
+	1, -8, 1,
+	1, 1,  1
+};
+PostProcessing PostProcessing::EdgeDetection(edKernel);
+
+GLfloat noEffectKernel[9] = {
+	1, 1, 1,
+	1, 1, 1,
+	1, 1, 1
+};
+PostProcessing PostProcessing::KernelEffect(noEffectKernel);

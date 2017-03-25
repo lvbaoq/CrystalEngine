@@ -129,6 +129,41 @@ public:
 		{
 			pause = !pause;
 		}
+		//Enable some post effects
+		if (keyCode == GLFW_KEY_1 && action == GLFW_PRESS)
+		{
+			//Inversion
+			postEffect = &PostProcessing::Inversion;
+		}
+
+		if (keyCode == GLFW_KEY_2 && action == GLFW_PRESS)
+		{
+			//Grayscale
+			postEffect = &PostProcessing::Grayscale;
+		}
+
+		if (keyCode == GLFW_KEY_3 && action == GLFW_PRESS)
+		{
+			//Blur
+			postEffect = &PostProcessing::Blur;
+		}
+
+		if (keyCode == GLFW_KEY_4 && action == GLFW_PRESS)
+		{
+			//Sharpen
+			postEffect = &PostProcessing::Sharpen;
+		}
+		if (keyCode == GLFW_KEY_5 && action == GLFW_PRESS)
+		{
+			//Edge Detection
+			postEffect = &PostProcessing::EdgeDetection;
+		}
+		if (keyCode == GLFW_KEY_0 && action == GLFW_PRESS)
+		{
+			//Back to normal
+			postEffect = nullptr;
+		}
+
 		camera->keyCallBack(keyCode, action);
 		if (keyCode == GLFW_KEY_SPACE && !isJumping)
 		{

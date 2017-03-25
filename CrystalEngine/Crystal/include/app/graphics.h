@@ -15,11 +15,22 @@
 #define DEFAULT_SKYBOX_FACE_BACK "./DefaultAssets/Skybox/back.jpg"
 #define DEFAULT_SKYBOX_FACE_FRONT "./DefaultAssets/Skybox/front.jpg"
 
+#define POST_PROCESSING_VSHADER_PATH "./DefaultAssets/Shaders/PostProcessingVertexShader.vs"
+#define POST_PROCESSING_FRAG_PATH_INVERSION "./DefaultAssets/Shaders/InversionEffect.fs"
+#define POST_PROCESSING_FRAG_PATH_GRAYSCALE "./DefaultAssets/Shaders/GrayScaleEffect.fs"
+#define POST_PROCESSING_FRAG_PATH_KERNEL "./DefaultAssets/Shaders/KernelEffect.fs"
+#define KERNEL_VALUE_NUM 9
+#define DEFAULT_KERNEL_OFFSET (1.0f/300.0f)
+#define KERNEL_OFFSET_UNIFORM "offset"
+#define KERNEL_UNIFORM "kernel"
 
 #include <app\GL\glew.h>
 #include "SOIL\SOIL.h"
+#include <app\shader.h>
+
 namespace crystal
 {
+	/*Representing a texture*/
 	class Texture
 	{
 
@@ -93,6 +104,7 @@ namespace crystal
 		static Material pureColorMaterial(Vector3 color);
 	};
 
+	/*Representing a skybox*/
 	class SkyBox
 	{
 	private:
@@ -109,4 +121,51 @@ namespace crystal
 		}
 	};
 
+	/*Representing some post processing effects*/
+	class PostProcessing
+	{
+	private:
+		Shader shader;
+		GLfloat kernel[9];//Used for kernel effects
+		GLfloat kernelOffset;
+		bool isKernel;
+		bool shaderinitialized;
+		const char* fShaderPath;
+	public:
+		//Some pre-defined effects
+		static PostProcessing Inversion;
+		static PostProcessing Grayscale;
+		static PostProcessing Sharpen;
+		static PostProcessing Blur;
+		static PostProcessing EdgeDetection;
+		static PostProcessing KernelEffect;//For customized effects
+
+		PostProcessing(const char* fragmentShaderPath);
+		PostProcessing(GLfloat* kernel);
+		~PostProcessing()
+		{ 
+			//Delete shader
+			shader.deleteShader(); 
+		}
+
+		void initShader();
+
+		void useShader();
+
+		Shader& getShader()
+		{
+			return shader;
+		}
+
+		GLfloat getKernelOffset()
+		{
+			return kernelOffset;
+		}
+
+		bool isShaderInitialized()
+		{
+			return shaderinitialized;
+		}
+
+	};
 }

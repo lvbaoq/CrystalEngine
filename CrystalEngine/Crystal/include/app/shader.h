@@ -21,8 +21,19 @@ public:
 
 	GLuint program;
 
-	Shader(const GLchar* vertexPath = DEFAULT_VETEX_SHADER_PATH, 
+	//Create an empty shader
+	Shader(bool)
+	{
+		
+	}
+
+	Shader(const GLchar* vertexPath = DEFAULT_VETEX_SHADER_PATH,
 		const GLchar* fragmentPath = DEFAULT_FRAGMENT_SHADER_PATH)
+	{
+		initShader(vertexPath, fragmentPath);
+	}
+
+	void initShader(const GLchar* vertexPath, const GLchar* fragmentPath)
 	{
 		//Read file from file path
 		std::string vertexCode, fragmentCode;
@@ -31,7 +42,7 @@ public:
 		vertexFile.exceptions(std::ifstream::badbit);
 		fragmentFile.exceptions(std::ifstream::badbit);
 
-		try 
+		try
 		{
 			//Open file
 			vertexFile.open(vertexPath);

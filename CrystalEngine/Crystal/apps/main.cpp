@@ -1,5 +1,8 @@
 //Memory leak test
 #define _CRTDBG_MAP_ALLOC
+#ifdef _DEBUG
+#define new   new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#endif
 #include <stdlib.h>
 #include <crtdbg.h>
 
@@ -29,9 +32,13 @@ void mouse_move_callback(GLFWwindow* window, double xpos, double ypos);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
+// Generates a texture that is suited for attachments to a framebuffer
+GLuint generateAttachmentTexture(GLboolean depth, GLboolean stencil);
+
 int main()
 {
-
+	#pragma region "initialization"
+	//Memory leak detection
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
 	//Bind application
@@ -84,11 +91,13 @@ int main()
 	glfwSetCursorPosCallback(window, mouse_move_callback);
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
 	glfwSetScrollCallback(window, scroll_callback);
+#pragma endregion
 
 	//Init shaders with lights enabled
 	Shader shader{LIGHT_VETEX_SHADER_PATH,LIGHT_FRAGMENT_SHADER_PATH};
 	Shader skyboxShader{ DEFAULT_SKYBOX_VERTEX_SHADER_PATH,DEFAULT_SKYBOX_FRAGMENT_SHADER_PATH };
 
+	#pragma region "setVAOs"
 	//Put vertices of primitive shapes into vetex buffer
 	//Boxes
 	GLuint boxVBO, boxVAO;
@@ -139,11 +148,48 @@ int main()
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+	// Setup screen VAO. Screen vao is used to show post processing results
+	GLuint quadVAO, quadVBO;
+	glGenVertexArrays(1, &quadVAO);
+	glGenBuffers(1, &quadVBO);
+	glBindVertexArray(quadVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)(2 * sizeof(GLfloat)));
+	glBindVertexArray(0);
+
+	//Setup Framebuffers
+	GLuint framebuffer;
+	glGenFramebuffers(1, &framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+	// Create a color attachment texture
+	GLuint textureColorbuffer = generateAttachmentTexture(false, false);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+	// Create a renderbuffer object for depth and stencil attachment
+	GLuint rbo;
+	glGenRenderbuffers(1, &rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+	// Use a single renderbuffer object for both a depth and stencil buffer.
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, application->screenWidth, application->screenHeight); 
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo); 
+	//Check if complete
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+	}		
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	//Set texture units
 	shader.useShader();
 	glUniform1i(glGetUniformLocation(shader.program, "material.diffuse"), 0);
 	glUniform1i(glGetUniformLocation(shader.program, "material.specular"), 1);
 	glUniform1i(glGetUniformLocation(shader.program, "material.emission"), 2);
+	glUseProgram(0);
+#pragma endregion
 
 	//Set up application
 	application->start();
@@ -151,9 +197,13 @@ int main()
 	//Load skybox
 	application->skybox.loadCubeMap();
 
+	// Draw as wireframe
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 	//Main Game Loop
 	while (!glfwWindowShouldClose(window))
 	{
+	#pragma region "Game Loop"
 		//Mark Time
 		GLfloat currentTime = glfwGetTime();
 		deltaTime = currentTime - lastFrame;
@@ -164,10 +214,7 @@ int main()
 		glfwPollEvents();
 		//Pause Game
 		if (application->pause) continue;
-		//Clear Screen
-		glm::vec4 cColor = application->clearColor;
-		glClearColor(cColor.x, cColor.y, cColor.z, cColor.w);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
 		//Update
 		application->world->startFrame();
 		application->update(deltaTime);
@@ -177,10 +224,26 @@ int main()
 			application->world->startFrame();
 			application->world->runPhysics(deltaTime);
 		}
+
+		//Clear Screen
+		glm::vec4 cColor = application->clearColor;
+		glClearColor(cColor.x, cColor.y, cColor.z, cColor.w);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		//Draw
+		if (application->postEffect)
+		{
+			if (!application->postEffect->isShaderInitialized())
+			{
+				application->postEffect->initShader();
+			}
+			//Some postEffect is enabled
+			glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glEnable(GL_DEPTH_TEST);
+		}
 		//Common objects
-		shader.useShader();
-		
+		shader.useShader();		
 		//Set direction light
 		if (application->dirLight)
 		{
@@ -256,8 +319,25 @@ int main()
 		glBindVertexArray(0);
 		glDepthFunc(GL_LESS);
 
+		if (application->postEffect)
+		{
+			//Some postEffect is enabled
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glClear(GL_COLOR_BUFFER_BIT);
+			glDisable(GL_DEPTH_TEST);
+
+			application->postEffect->useShader();
+			glBindVertexArray(quadVAO);
+			glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+			glBindVertexArray(0);
+			glEnable(GL_DEPTH_TEST);
+		}
+
 		//Finish draw all objects
 		glfwSwapBuffers(window);
+
+	#pragma endregion
 	}
 
 	//Properly release gl resources
@@ -265,7 +345,13 @@ int main()
 	glDeleteVertexArrays(1, &boxVAO);
 	glDeleteBuffers(1, &squareVBO);
 	glDeleteVertexArrays(1, &squareVAO);
+	glDeleteBuffers(1, &skyboxVBO);
+	glDeleteVertexArrays(1, &skyboxVAO);
+	glDeleteBuffers(1, &quadVBO);
+	glDeleteVertexArrays(1, &quadVAO);
+	glDeleteFramebuffers(1, &framebuffer);
 	shader.deleteShader();
+	skyboxShader.deleteShader();
 	glfwTerminate();
 
 	return 0;
@@ -289,4 +375,31 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
 	application->mouseButton(button, action);
+}
+
+// Generates a texture that is suited for attachments to a framebuffer
+GLuint generateAttachmentTexture(GLboolean depth, GLboolean stencil)
+{
+	// What enum to use?
+	GLenum attachment_type;
+	if (!depth && !stencil)
+		attachment_type = GL_RGB;
+	else if (depth && !stencil)
+		attachment_type = GL_DEPTH_COMPONENT;
+	else if (!depth && stencil)
+		attachment_type = GL_STENCIL_INDEX;
+
+	//Generate texture ID and load texture data 
+	GLuint textureID;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	if (!depth && !stencil)
+		glTexImage2D(GL_TEXTURE_2D, 0, attachment_type, application->screenWidth, application->screenHeight, 0, attachment_type, GL_UNSIGNED_BYTE, NULL);
+	else // Using both a stencil and depth test, needs special format arguments
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, application->screenWidth, application->screenHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return textureID;
 }

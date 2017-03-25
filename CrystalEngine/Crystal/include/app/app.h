@@ -20,10 +20,6 @@
 #include <app\graphics.h>
 #include <memory>
 
-#ifdef _DEBUG
-//#define new   new(_NORMAL_BLOCK, __FILE__, __LINE__)
-#endif
-
 #define DEFAULT_SCREEN_WIDTH 800
 #define DEFAULT_SCREEN_HEIGHT 600
 #define DEFAULT_CLEAR_COLOR glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)
@@ -70,8 +66,10 @@ public:
 	bool runPhysics;
 	//Pause game loop
 	bool pause;
-
+	//The skybox
 	crystal::SkyBox skybox;
+	//The post processing effect
+	crystal::PostProcessing* postEffect;
 
 	crystal::Vector3 worldSize;
 
@@ -81,7 +79,7 @@ public:
 		float worldMaxX = DEFAULT_WORLD_SIZE,
 		float worldMaxY = DEFAULT_WORLD_SIZE,
 		float worldMaxZ = DEFAULT_WORLD_SIZE):
-		screenWidth(width),screenHeight(height),pause(false),MSAASampleNum(0)
+		screenWidth(width),screenHeight(height),pause(false),MSAASampleNum(0),postEffect(nullptr)
 	{		
 		runPhysics = true;
 		ratio = (float)width /(float)height;
