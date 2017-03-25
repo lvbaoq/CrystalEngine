@@ -7,71 +7,13 @@
 #include <iostream>
 #include <app\shader.h>
 #include <app\glm\gtc\type_ptr.inl>
+#include <app\defaultVertices.h>
 
 #define MODEL_MATRIX_UNIFORM_NAME "model"
 #define VIEW_MATRIX_UNIFORM_NAME "view"
 #define PROJECTION_MATRIX_UNIFORM_NAME "projection"
 #define COLOR_UNIFORM_NAME "bodyColor"
 
-//Use this array to define position of the box
-//Use model matrix to move/rotate/scale the box
-GLfloat boxVertices[] = {
-	//Default position in NDC //normals
-	-0.5f, -0.5f, -0.5f, 0.0f,  0.0f, -1.0f,
-	0.5f, -0.5f, -0.5f, 0.0f,  0.0f, -1.0f,
-	0.5f,  0.5f, -0.5f, 0.0f,  0.0f, -1.0f,
-	0.5f,  0.5f, -0.5f, 0.0f,  0.0f, -1.0f,
-	-0.5f,  0.5f, -0.5f, 0.0f,  0.0f, -1.0f,
-	-0.5f, -0.5f, -0.5f, 0.0f,  0.0f, -1.0f,
-
-	-0.5f, -0.5f,  0.5f, 0.0f,  0.0f,  1.0f,
-	0.5f, -0.5f,  0.5f, 0.0f,  0.0f,  1.0f,
-	0.5f,  0.5f,  0.5f, 0.0f,  0.0f,  1.0f,
-	0.5f,  0.5f,  0.5f, 0.0f,  0.0f,  1.0f,
-	-0.5f,  0.5f,  0.5f, 0.0f,  0.0f,  1.0f,
-	-0.5f, -0.5f,  0.5f, 0.0f,  0.0f,  1.0f,
-
-	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-
-	0.5f,  0.5f,  0.5f, 1.0f,  0.0f,  0.0f,
-	0.5f,  0.5f, -0.5f, 1.0f,  0.0f,  0.0f,
-	0.5f, -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,
-	0.5f, -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,
-	0.5f, -0.5f,  0.5f, 1.0f,  0.0f,  0.0f,
-	0.5f,  0.5f,  0.5f, 1.0f,  0.0f,  0.0f,
-
-	-0.5f, -0.5f, -0.5f, 0.0f, -1.0f,  0.0f,
-	0.5f, -0.5f, -0.5f, 0.0f, -1.0f,  0.0f,
-	0.5f, -0.5f,  0.5f, 0.0f, -1.0f,  0.0f,
-	0.5f, -0.5f,  0.5f, 0.0f, -1.0f,  0.0f,
-	-0.5f, -0.5f,  0.5f, 0.0f, -1.0f,  0.0f,
-	-0.5f, -0.5f, -0.5f, 0.0f, -1.0f,  0.0f,
-
-	-0.5f,  0.5f, -0.5f, 0.0f,  1.0f,  0.0f,
-	0.5f,  0.5f, -0.5f, 0.0f,  1.0f,  0.0f,
-	0.5f,  0.5f,  0.5f, 0.0f,  1.0f,  0.0f,
-	0.5f,  0.5f,  0.5f, 0.0f,  1.0f,  0.0f,
-	-0.5f,  0.5f,  0.5f, 0.0f,  1.0f,  0.0f,
-	-0.5f,  0.5f, -0.5f, 0.0f,  1.0f,  0.0f,
-};
-
-//Use this array to define position of a 2d square
-GLfloat squareVertices[] = {
-	//Default position in NDC
-	// First triangle  //Normal
-	0.1f,  0.1f, 0.0f,  0.0f,  0.0f,  -1.0f,// Top Right
-	0.1f,  -0.1f, 0.0f,  0.0f,  0.0f,  -1.0f,// Bottom Right
-	-0.1f, 0.1f, 0.0f,  0.0f,  0.0f,  -1.0f,// Top Left 
-	// Second triangle
-	0.1f, -0.1f, 0.0f, 0.0f,  0.0f,  -1.0f, // Bottom Right
-	-0.1f, -0.1f, 0.0f, 0.0f,  0.0f,  -1.0f, // Bottom Left
-	-0.1f,  0.1f, 0.0f , 0.0f,  0.0f,  -1.0f,// Top Left
-};
 
 //The application
 extern std::unique_ptr<Application> getApplication();
@@ -145,6 +87,7 @@ int main()
 
 	//Init shaders with lights enabled
 	Shader shader{LIGHT_VETEX_SHADER_PATH,LIGHT_FRAGMENT_SHADER_PATH};
+	Shader skyboxShader{ DEFAULT_SKYBOX_VERTEX_SHADER_PATH,DEFAULT_SKYBOX_FRAGMENT_SHADER_PATH };
 
 	//Put vertices of primitive shapes into vetex buffer
 	//Boxes
@@ -154,10 +97,12 @@ int main()
 	glGenBuffers(1, &boxVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, boxVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(boxVertices), boxVertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3*sizeof(GLfloat)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3*sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(2);
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -170,18 +115,41 @@ int main()
 	glGenBuffers(1, &squareVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, squareVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(squareVertices), squareVertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(2);
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	Explosion::particleVAO = squareVAO;
 	Plane::planeVAO = squareVAO;
 
+	//Skybox
+	GLuint skyboxVAO, skyboxVBO;
+	glGenVertexArrays(1, &skyboxVAO);
+	glGenBuffers(1, &skyboxVBO);
+	glBindVertexArray(skyboxVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//Set texture units
+	shader.useShader();
+	glUniform1i(glGetUniformLocation(shader.program, "material.diffuse"), 0);
+	glUniform1i(glGetUniformLocation(shader.program, "material.specular"), 1);
+	glUniform1i(glGetUniformLocation(shader.program, "material.emission"), 2);
+
 	//Set up application
 	application->start();
+
+	//Load skybox
+	application->skybox.loadCubeMap();
 
 	//Main Game Loop
 	while (!glfwWindowShouldClose(window))
@@ -210,6 +178,7 @@ int main()
 			application->world->runPhysics(deltaTime);
 		}
 		//Draw
+		//Common objects
 		shader.useShader();
 		
 		//Set direction light
@@ -271,6 +240,23 @@ int main()
 			pe->drawEffect(deltaTime);
 		}
 
+		//Draw Skybox
+		glDepthFunc(GL_LEQUAL);
+		skyboxShader.useShader();
+		glm::mat4 skyBoxview = glm::mat4(glm::mat3(application->camera->getViewMarixAfterMoving()));	// Remove any translation component of the view matrix
+		glm::mat4 skyBoxProjection = application->camera->getProjectionMatrix();
+		glUniformMatrix4fv(glGetUniformLocation(skyboxShader.program, "view"), 1, GL_FALSE, glm::value_ptr(skyBoxview));
+		glUniformMatrix4fv(glGetUniformLocation(skyboxShader.program, "projection"), 1, GL_FALSE, glm::value_ptr(skyBoxProjection));
+		// skybox cube
+		glBindVertexArray(skyboxVAO);
+		glActiveTexture(GL_TEXTURE0);
+		glUniform1i(glGetUniformLocation(shader.program, "skybox"), 0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, application->skybox.getCubeTexture());
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
+		glDepthFunc(GL_LESS);
+
+		//Finish draw all objects
 		glfwSwapBuffers(window);
 	}
 

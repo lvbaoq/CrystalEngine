@@ -21,8 +21,87 @@ const Material Material::pearl(Vector3(0.25f, 0.207f, 0.021f),
 const Material Material::ruby(Vector3(0.175f, 0.012f, 0.012f),
 	Vector3(0.614f, 0.041f, 0.041f), Vector3(0.728f, 0.627f, 0.627f), 0.6f);
 
+void crystal::Material::setDiffuseMap(const char * const path)
+{
+	diffuseMap.createTexture(path);
+}
+
+void crystal::Material::setSpecularMap(const char * const path)
+{
+	specularMap.createTexture(path);
+}
+
+void crystal::Material::setEmissionMap(const char * const path)
+{
+	emissionMap.createTexture(path);
+}
+
+void crystal::Material::initTextures()
+{
+	if (!diffuseMap.isCreated())
+		diffuseMap.createTexture(DEFAULT_TEXTURE_WHITE_PATH);
+	if (!specularMap.isCreated())
+		specularMap.createTexture(DEFAULT_TEXTURE_BLACK_PATH);
+	if (!emissionMap.isCreated())
+		emissionMap.createTexture(DEFAULT_TEXTURE_BLACK_PATH);
+}
+
 Material Material::pureColorMaterial(Vector3 color)
 {
 	Material m(color, color, color, 0.5f);
 	return m;
+}
+
+void Texture::createTexture(const char* const location)
+{
+	glGenTextures(1, &texture);
+	unsigned char* image;
+	image = SOIL_load_image(location, &width, &height, 0, SOIL_LOAD_RGB);
+	//Set texture
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	SOIL_free_image_data(image);
+	//Set texture wrapping and filtering model
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,wrap_s_model);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t_model);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,min_filter_model);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,mag_filter_model);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	
+	created = true;
+}
+
+void crystal::SkyBox::loadCubeMap()
+{
+	glGenTextures(1, &textureCube);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureCube);
+	//Load images for all the faces of skybox
+	unsigned char* image;
+	for (GLuint i = 0; i < SKYBOX_FACES_NUMBER; i++)
+	{
+		image = SOIL_load_image(faces[i], &width, &height, 0, SOIL_LOAD_RGB);
+		glTexImage2D(
+			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
+			GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+	}
+	//Set texture attributes
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	
+	glBindTexture(GL_TEXTURE_CUBE_MAP,0);
+}
+
+crystal::SkyBox::SkyBox()
+{
+	//Init face locations
+	faces[0] = DEFAULT_SKYBOX_FACE_RIGHT;
+	faces[1] = DEFAULT_SKYBOX_FACE_LEFT;
+	faces[2] = DEFAULT_SKYBOX_FACE_TOP;
+	faces[3] = DEFAULT_SKYBOX_FACE_BOTTOM;
+	faces[4] = DEFAULT_SKYBOX_FACE_BACK;
+	faces[5] = DEFAULT_SKYBOX_FACE_FRONT;
 }

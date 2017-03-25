@@ -149,15 +149,26 @@ void DirectionalLight::setViewPosition(float x, float y, float z)
 }
 
 //Helper functions
-void setMaterialUniform(crystal::Material m, GLuint program)
+void setMaterialUniform(crystal::Material& m, GLuint program)
 {
-	GLint matAmbientLoc = glGetUniformLocation(program, "material.ambient");
-	GLint matDiffuseLoc = glGetUniformLocation(program, "material.diffuse");
-	GLint matSpecularLoc = glGetUniformLocation(program, "material.specular");
+	GLint matAmbientLoc = glGetUniformLocation(program, "material.ambientColor");
+	GLint matDiffuseLoc = glGetUniformLocation(program, "material.diffuseColor");
+	GLint matSpecularLoc = glGetUniformLocation(program, "material.specularColor");
 	GLint matShineLoc = glGetUniformLocation(program, "material.shininess");
 
 	glUniform3f(matAmbientLoc, m.ambient.x, m.ambient.y, m.ambient.z);
 	glUniform3f(matDiffuseLoc, m.diffuse.x, m.diffuse.y, m.diffuse.z);
 	glUniform3f(matSpecularLoc, m.specular.x, m.specular.y, m.specular.z);
 	glUniform1f(matShineLoc, m.shininess);
+
+	//Init unset textures to default texture
+	m.initTextures();
+
+	//Bind diffuse map
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, m.diffuseMap.getTexture());
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, m.specularMap.getTexture());
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, m.emissionMap.getTexture());
 }

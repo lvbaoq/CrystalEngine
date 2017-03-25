@@ -1,9 +1,14 @@
 #version 330 core
 
 struct Material {
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
+	vec3 diffuseColor;
+	vec3 ambientColor;
+	vec3 specularColor;
+
+	sampler2D diffuse;
+    sampler2D specular;
+	sampler2D emission;
+
     float shininess;
 }; 
 
@@ -18,6 +23,7 @@ struct DirLight {
 in vec3 FragPos;
 in vec3 Normal;
 in vec3 vColor;
+in vec2 TexCoords;
 
 out vec4 color;
 
@@ -50,8 +56,10 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     // Combine results
-    vec3 ambient = light.ambient * material.ambient;
-    vec3 diffuse = light.diffuse * diff * material.diffuse;
-    vec3 specular = light.specular * spec * material.specular;
-    return (ambient + diffuse + specular);
+    vec3 ambient = light.ambient * material.ambientColor * vec3(texture(material.diffuse, TexCoords));
+    vec3 diffuse = light.diffuse * material.diffuseColor* diff * vec3(texture(material.diffuse, TexCoords));
+    vec3 specular = light.specular *  material.specularColor *spec * vec3(texture(material.specular,TexCoords));
+    vec3 emission = vec3(texture(material.emission,TexCoords));
+
+	return (ambient + diffuse + specular + emission);
 }

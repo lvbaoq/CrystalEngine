@@ -22,7 +22,7 @@
 #define DEFAULT_DENSITY 1.0f
 
 /* A gloable method to set the material data to the shader's uniform */
-void setMaterialUniform(crystal::Material m, GLuint program);
+void setMaterialUniform(crystal::Material& m, GLuint program);
 
 class Primitive:public crystal::RigidBody
 {
@@ -41,7 +41,7 @@ public:
 	//Get the number of vetex to draw
 	virtual GLint getVertexNumber() { return 0; };
 	//Get the color of the primitive, in RGBA format
-	virtual crystal::Material getMaterial() { return material; };
+	virtual crystal::Material& getMaterial() { return material; };
 
 	void setMaterial(crystal::Material m) { this->material = m; };
 

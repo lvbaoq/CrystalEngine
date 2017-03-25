@@ -8,10 +8,12 @@
 #include "GL\glew.h"
 
 #define INFO_LOG_BUFFER_SIZE 512
-#define DEFAULT_VETEX_SHADER_PATH "./Shaders/DefaultVertexShader.vs"
-#define DEFAULT_FRAGMENT_SHADER_PATH "./Shaders/DefaultFragmentShader.fs"
-#define LIGHT_VETEX_SHADER_PATH "./Shaders/LightVertexShader.vs"
-#define LIGHT_FRAGMENT_SHADER_PATH "./Shaders/LightFragmentShader.fs"
+#define DEFAULT_VETEX_SHADER_PATH "./DefaultAssets/Shaders/DefaultVertexShader.vs"
+#define DEFAULT_FRAGMENT_SHADER_PATH "./DefaultAssets/Shaders/DefaultFragmentShader.fs"
+#define LIGHT_VETEX_SHADER_PATH "./DefaultAssets/Shaders/LightVertexShader.vs"
+#define LIGHT_FRAGMENT_SHADER_PATH "./DefaultAssets/Shaders/LightFragmentShader.fs"
+#define DEFAULT_SKYBOX_VERTEX_SHADER_PATH "./DefaultAssets/Shaders/DefaultSkyboxVertexShader.vs"
+#define DEFAULT_SKYBOX_FRAGMENT_SHADER_PATH "./DefaultAssets/Shaders/DefaultSkyboxFragmentShader.fs"
 
 class Shader
 {

@@ -36,9 +36,13 @@ public:
 		//Place ground		
 		Plane* plane = createPlane(Vector3(0.0f, 1.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f),
 			Material::pureColorMaterial(Vector3(0.45f, 0.29f, 0.07f)));//A brown ground
+		plane->getMaterial().setDiffuseMap("./Assets/Textures/ground.jpg");
 
 		//Place some blocks to shoot
-		Box* box1  = createBox(Vector3(0.0f, 5.0f, 0.0f), Vector3(1.0f, 1.0f, 1.0f), Material::obsidian);	
+		Box* box1  = createBox(Vector3(0.0f, 5.0f, 0.0f), Vector3(1.0f, 1.0f, 1.0f));	
+		box1->getMaterial().setDiffuseMap("./Assets/Textures/container.png");
+		box1->getMaterial().setSpecularMap("./Assets/Textures/container_specular.png");
+		box1->getMaterial().setEmissionMap("./Assets/Textures/matrix.jpg");
 		box1->setAcceleration(0.0f, -1.0f, 0.0f);
 		//Set rotation
 		//box1->setOrientation(Quaternion(60.0f, Vector3(1.0f, 0.0f, 0.0f)));
@@ -46,6 +50,9 @@ public:
 		world->addCallbackMethod(box1, boxOnCollision);
 
 		Box* box2 = createBox(Vector3(4.0f, 6.0f, 0.0f),Vector3(1.0f, 1.0f, 1.0f), Material::pearl);
+		box2->getMaterial().setDiffuseMap("./Assets/Textures/container.png");
+		box2->getMaterial().setSpecularMap("./Assets/Textures/container_specular.png");
+		box2->getMaterial().setEmissionMap("./Assets/Textures/matrix.jpg");
 		box2->setVelocity(2.0f, 0.0f, -1.0f);
 		box2->setAcceleration(0.0f, -1.0f, 0.0f);
 		world->addCallbackMethod(box2, boxOnCollision);

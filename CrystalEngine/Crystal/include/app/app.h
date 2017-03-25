@@ -71,6 +71,8 @@ public:
 	//Pause game loop
 	bool pause;
 
+	crystal::SkyBox skybox;
+
 	crystal::Vector3 worldSize;
 
 	Application(int width = DEFAULT_SCREEN_WIDTH,int height = DEFAULT_SCREEN_HEIGHT,
