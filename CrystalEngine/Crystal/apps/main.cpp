@@ -35,6 +35,9 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 // Generates a texture that is suited for attachments to a framebuffer
 GLuint generateAttachmentTexture(GLboolean depth, GLboolean stencil);
 
+//Render all game objects in current game world.
+void renderWorld(Shader &shader,bool depthOnly = false);
+
 int main()
 {
 	#pragma region "initialization"
@@ -96,6 +99,8 @@ int main()
 	//Init shaders with lights enabled
 	Shader shader{LIGHT_VETEX_SHADER_PATH,LIGHT_FRAGMENT_SHADER_PATH};
 	Shader skyboxShader{ DEFAULT_SKYBOX_VERTEX_SHADER_PATH,DEFAULT_SKYBOX_FRAGMENT_SHADER_PATH };
+	Shader postShader{ POST_PROCESSING_VSHADER_PATH,POST_PROCESSING_FRAG_PATH_NORMAL };
+	Shader depthShader{ DEPTH_VERTEX_PATH ,EMPTY_FRAG_PATH };
 
 	#pragma region "setVAOs"
 	//Put vertices of primitive shapes into vetex buffer
@@ -183,11 +188,41 @@ int main()
 	}		
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	//Depth map
+	GLuint depthMapFBO;
+	glGenFramebuffers(1, &depthMapFBO);
+	//create depth texture
+	GLuint depthTexture;
+	glGenTextures(1, &depthTexture);
+	glBindTexture(GL_TEXTURE_2D, depthTexture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, application->depthMapWidth, application->depthMapHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	//texture parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	GLfloat borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
+	//Only depth value is needed
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	//Check if complete
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cout << "ERROR::FRAMEBUFFER::Depth Framebuffer is not complete!" << std::endl;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	//Set texture units
 	shader.useShader();
 	glUniform1i(glGetUniformLocation(shader.program, "material.diffuse"), 0);
 	glUniform1i(glGetUniformLocation(shader.program, "material.specular"), 1);
 	glUniform1i(glGetUniformLocation(shader.program, "material.emission"), 2);
+	glUniform1i(glGetUniformLocation(shader.program, "shadowMap"), 3);
 	glUseProgram(0);
 #pragma endregion
 
@@ -214,16 +249,30 @@ int main()
 		glfwPollEvents();
 		//Pause Game
 		if (application->pause) continue;
-		
+
 		//Update
 		application->world->startFrame();
 		application->update(deltaTime);
 		//Run Physics
 		if (application->runPhysics)
 		{
-			application->world->startFrame();
 			application->world->runPhysics(deltaTime);
 		}
+
+		//Render to depth texture from dirLight's perspective
+		glCullFace(GL_FRONT);//Peter panning
+		depthShader.useShader();
+		glUniformMatrix4fv(glGetUniformLocation(depthShader.program, "lightSpaceMatrix"),
+			1, GL_FALSE, glm::value_ptr(application->dirLight->getLightSpaceMatrix()));
+		glViewport(0, 0, application->depthMapWidth, application->depthMapHeight);
+		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		renderWorld(depthShader,true);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glCullFace(GL_BACK);
+
+		//Reset viewport
+		glViewport(0, 0, application->screenWidth, application->screenHeight);
 
 		//Clear Screen
 		glm::vec4 cColor = application->clearColor;
@@ -233,71 +282,48 @@ int main()
 		//Draw
 		if (application->postEffect)
 		{
+			//Some postEffect is enabled
 			if (!application->postEffect->isShaderInitialized())
 			{
 				application->postEffect->initShader();
 			}
-			//Some postEffect is enabled
-			glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			glEnable(GL_DEPTH_TEST);
 		}
-		//Common objects
+		
+		//Use post process here to enable gamma correction
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glEnable(GL_DEPTH_TEST);
+		
+		//Common objects in game world
 		shader.useShader();		
+		
 		//Set direction light
 		if (application->dirLight)
 		{
 			application->dirLight->setLightUniform(shader.program);
 		}
-		//Perform transform
-		GLuint modelLoc = shader.getUniformLocation(MODEL_MATRIX_UNIFORM_NAME);
+
 		GLuint viewLoc = shader.getUniformLocation(VIEW_MATRIX_UNIFORM_NAME);
 		GLuint projectionLoc = shader.getUniformLocation(PROJECTION_MATRIX_UNIFORM_NAME);
-		GLuint colorLoc = shader.getUniformLocation(COLOR_UNIFORM_NAME);
-
 		//view matrix
 		glm::mat4 view;
 		view = application->camera->getViewMarixAfterMoving();
-		//projection matrix
-		glm::mat4 projection = application->camera->getProjectionMatrix();
-
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+		//projection matrix
+		glm::mat4 projection = application->camera->getProjectionMatrix();	
 		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-		application->display();//Common Stuff
-		//Draw each rigidbody
-		crystal::RigidBodyList bodyList = application->world->getRigidBodyList();
 		
-		for (auto body : bodyList)
-		{
-			if (body->isActive)
-			{
-				if (body->isPrimitive())
-				{
-					//Only draw primitive shapes for now
-					Primitive* shape = (Primitive*)(body.get());
-					glBindVertexArray(shape->getVAO());
-					glm::mat4 model = shape->getModelMatrix();
-					//glm::mat4 model;
-					glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-					//Material
-					setMaterialUniform(shape->getMaterial(), shader.program);
-					//Draw Call
-					glDrawArrays(GL_TRIANGLES, 0, shape->getVertexNumber());
-				}
-			}
-		}
-
-		glBindVertexArray(0);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, depthTexture);
+		renderWorld(shader);
 		
 		//Update particles
 		application->pworld->runPhysics(deltaTime);
-		modelLoc = shader.getUniformLocation(MODEL_MATRIX_UNIFORM_NAME);
-		colorLoc = shader.getUniformLocation(COLOR_UNIFORM_NAME);
+		
 		//Draw Particles
 		Explosion::program = shader.program;
-		Explosion::modelLoc = modelLoc;	
-
+		Explosion::modelLoc = shader.getUniformLocation(MODEL_MATRIX_UNIFORM_NAME);
+		glDisable(GL_CULL_FACE);
 		for (crystal::PEffectPtr pe : application->pworld->particleEffects)
 		{
 			pe->drawEffect(deltaTime);
@@ -306,6 +332,10 @@ int main()
 		//Draw Skybox
 		glDepthFunc(GL_LEQUAL);
 		skyboxShader.useShader();
+		//Set light color for skybox
+		glUniform3f(glGetUniformLocation(skyboxShader.program, "dirLightDiffuse")
+			,application->dirLight->diffuse.x, application->dirLight->diffuse.y, application->dirLight->diffuse.z);
+
 		glm::mat4 skyBoxview = glm::mat4(glm::mat3(application->camera->getViewMarixAfterMoving()));	// Remove any translation component of the view matrix
 		glm::mat4 skyBoxProjection = application->camera->getProjectionMatrix();
 		glUniformMatrix4fv(glGetUniformLocation(skyboxShader.program, "view"), 1, GL_FALSE, glm::value_ptr(skyBoxview));
@@ -319,21 +349,35 @@ int main()
 		glBindVertexArray(0);
 		glDepthFunc(GL_LESS);
 
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glDisable(GL_DEPTH_TEST);
 		if (application->postEffect)
 		{
 			//Some postEffect is enabled
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glClear(GL_COLOR_BUFFER_BIT);
-			glDisable(GL_DEPTH_TEST);
-
 			application->postEffect->useShader();
-			glBindVertexArray(quadVAO);
-			glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-			glBindVertexArray(0);
-			glEnable(GL_DEPTH_TEST);
+		}
+		else 
+		{
+			postShader.useShader();		
+		}
+		//Use opengl built-in gamma correction methods
+		if (application->useGammaCorrection)
+		{
+			glEnable(GL_FRAMEBUFFER_SRGB);
+		}
+		else
+		{
+			glDisable(GL_FRAMEBUFFER_SRGB);
 		}
 
+		glBindVertexArray(quadVAO);
+		glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindVertexArray(0);
+		glEnable(GL_DEPTH_TEST);
+		
 		//Finish draw all objects
 		glfwSwapBuffers(window);
 
@@ -355,6 +399,44 @@ int main()
 	glfwTerminate();
 
 	return 0;
+}
+
+void renderWorld(Shader &shader,bool depthOnly)
+{
+	GLuint modelLoc = shader.getUniformLocation(MODEL_MATRIX_UNIFORM_NAME);
+
+	GLuint colorLoc = shader.getUniformLocation(COLOR_UNIFORM_NAME);
+
+	glEnable(GL_CULL_FACE);
+	
+	application->display();//Common Stuff
+	//Draw each rigidbody
+	crystal::RigidBodyList bodyList = application->world->getRigidBodyList();
+
+	for (auto body : bodyList)
+	{
+		if (body->isActive)
+		{
+			if (body->isPrimitive())
+			{
+				//Only draw primitive shapes for now
+				Primitive* shape = (Primitive*)(body.get());
+				glBindVertexArray(shape->getVAO());
+				glm::mat4 model = shape->getModelMatrix();
+				//glm::mat4 model;
+				glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+				//Material
+				if (!depthOnly)
+				{
+					setMaterialUniform(shape->getMaterial(), shader.program);
+				}
+				//Draw Call
+				glDrawArrays(GL_TRIANGLES, 0, shape->getVertexNumber());
+			}
+		}
+	}
+
+	glBindVertexArray(0);
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)

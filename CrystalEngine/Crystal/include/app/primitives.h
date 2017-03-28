@@ -21,6 +21,12 @@
 #define DEFAULT_COLOR_A 1.0f
 #define DEFAULT_DENSITY 1.0f
 
+//Default light properties
+#define DEFALT_LIGHT_NEAR_PLANE 1.0f
+#define DEFALT_LIGHT_FAR_PLANE 25.0f
+#define DEFALT_LIGHT_ORTHO_WIDTH 20.0f
+#define DEFALT_LIGHT_ORTHO_HEIGHT 20.0f
+
 /* A gloable method to set the material data to the shader's uniform */
 void setMaterialUniform(crystal::Material& m, GLuint program);
 
@@ -184,6 +190,9 @@ public:
 /* Representing a directional light in the scene */
 class DirectionalLight
 {
+private:
+	glm::vec3 viewPostion;
+
 public:
 	glm::vec3 direction;
 
@@ -191,16 +200,32 @@ public:
 	glm::vec3 diffuse;//diffuse color of the light
 	glm::vec3 specular;//specular color of the light
 
-	DirectionalLight()
+	//Used to decide the projection matrix from the light's perspective
+	GLfloat near_plane;
+	GLfloat far_plane;
+	GLfloat orthoLeft;
+	GLfloat orthoRight;
+	GLfloat orthoTop;
+	GLfloat orthoBottom;
+	glm::vec3 position;
+
+	DirectionalLight():near_plane(DEFALT_LIGHT_NEAR_PLANE), far_plane(DEFALT_LIGHT_FAR_PLANE),
+		orthoLeft(-DEFALT_LIGHT_ORTHO_WIDTH), orthoRight(DEFALT_LIGHT_ORTHO_WIDTH),
+		orthoTop(DEFALT_LIGHT_ORTHO_WIDTH), orthoBottom(-DEFALT_LIGHT_ORTHO_HEIGHT)
 	{
 		//Set default direction and color
 		direction = glm::normalize(glm::vec3(0.0f,-1.0f,1.0f));
-		ambient = diffuse = specular = glm::vec3(1.0f, 1.0f, 1.0f);//White color
+		ambient = glm::vec3(0.15f);
+		diffuse = specular = glm::vec3(1.0f, 1.0f, 1.0f);//White color
+		position = glm::vec3(-2.0f, 4.0f, -1.0f);
 	}
 
 	DirectionalLight(glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular):
 		direction(direction),ambient(ambient),diffuse(diffuse),specular(specular)
 	{}
+
+	//Get the transform matrix to convert vertex to the light's perspective
+	glm::mat4 getLightSpaceMatrix();
 
 	void setLightUniform(GLuint program);
 

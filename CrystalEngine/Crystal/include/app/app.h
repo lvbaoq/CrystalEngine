@@ -27,6 +27,7 @@
 #define DEFAULT_MAX_PARTICLE_CONTACT_NUM 50
 #define DEFAULT_WORLD_SIZE 100
 #define DEFAULT_CONTACT_RESOLVE_ITERATION 8
+#define DEFAULT_DEPTH_RESOLUTION 1366
 
 //Use smart pointers to manage common objects
 using DirectionLightPtr = std::unique_ptr<DirectionalLight>;
@@ -47,9 +48,6 @@ public:
 	int screenHeight;
 	//Screen ratio
 	float ratio;
-	//Graphics settings
-	/*The sample number of each fragment for MASS effect. Default is 0. Set a value larger than 0 to enable MSAA*/
-	unsigned MSAASampleNum;
 	//Camera object
 	CameraPtr camera;
 	//Directional lights
@@ -70,6 +68,14 @@ public:
 	crystal::SkyBox skybox;
 	//The post processing effect
 	crystal::PostProcessing* postEffect;
+	//Graphics settings
+	/*The sample number of each fragment for MASS effect. Default is 0. Set a value larger than 0 to enable MSAA*/
+	unsigned MSAASampleNum;
+	//Enable gamma correction or not
+	bool useGammaCorrection;
+	//The resolution of depth map
+	int depthMapWidth;
+	int depthMapHeight;
 
 	crystal::Vector3 worldSize;
 
@@ -79,9 +85,11 @@ public:
 		float worldMaxX = DEFAULT_WORLD_SIZE,
 		float worldMaxY = DEFAULT_WORLD_SIZE,
 		float worldMaxZ = DEFAULT_WORLD_SIZE):
-		screenWidth(width),screenHeight(height),pause(false),MSAASampleNum(0),postEffect(nullptr)
+		screenWidth(width),screenHeight(height),pause(false),MSAASampleNum(0),postEffect(nullptr),
+		depthMapHeight(DEFAULT_DEPTH_RESOLUTION), depthMapWidth(DEFAULT_DEPTH_RESOLUTION)
 	{		
 		runPhysics = true;
+		useGammaCorrection = true;
 		ratio = (float)width /(float)height;
 		world.reset(new crystal::World(maxContactNum, DEFAULT_CONTACT_RESOLVE_ITERATION));
 		pworld.reset(new crystal::ParticleWorld(maxPContactNum));

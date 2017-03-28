@@ -30,8 +30,14 @@ public:
 	void start()
 	{
 		//Set directional light
-		dirLight->direction = glm::vec3(0.0f, -3.0f, -1.0f);
-		dirLight->setViewPosition(camera->position.x, camera->position.y, camera->position.z + 5.0f);
+		dirLight->direction = glm::vec3(0.0f, -1.0f, -1.0f);
+		dirLight->setViewPosition(camera->position.x, camera->position.y, camera->position.z);
+		dirLight->position = glm::vec3(-3.0f, 6.0f, 5.0f);
+		Box* po = createBox(Vector3(-3.0f, 5.0f, 5.0f), Vector3(0.2f, 0.2f, 0.2f));
+		po->setAcceleration(0.0f, 0.0f, 0.0f);
+		//dirLight->diffuse = glm::vec3(0.0f, 0.0f, 0.0f);
+		//dirLight->ambient = glm::vec3(0.0f, 0.0f, 0.0f);
+		//dirLight->specular = glm::vec3(0.0f, 0.0f, 0.0f);
 
 		//Place ground		
 		Plane* plane = createPlane(Vector3(0.0f, 1.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f),
@@ -49,7 +55,7 @@ public:
 		//Add a callback method for the collider. This method is automatically invoked when collision happens
 		world->addCallbackMethod(box1, boxOnCollision);
 
-		Box* box2 = createBox(Vector3(4.0f, 6.0f, 0.0f),Vector3(1.0f, 1.0f, 1.0f), Material::pearl);
+		Box* box2 = createBox(Vector3(4.0f, 6.0f, 0.0f),Vector3(1.0f, 1.0f, 1.0f));
 		box2->getMaterial().setDiffuseMap("./Assets/Textures/container.png");
 		box2->getMaterial().setSpecularMap("./Assets/Textures/container_specular.png");
 		box2->getMaterial().setEmissionMap("./Assets/Textures/matrix.jpg");
@@ -90,6 +96,7 @@ public:
 			//Set camera position
 			camera->position.y = yPosition;
 		}
+		dirLight->setViewPosition(camera->position.x, camera->position.y, camera->position.z);
 	}
 	/* Display a title on the window */
 	const char* getTitle()
@@ -162,6 +169,16 @@ public:
 		{
 			//Back to normal
 			postEffect = nullptr;
+		}
+		if (keyCode == GLFW_KEY_G && action == GLFW_PRESS)
+		{
+			//Enable or disable gamma correction
+			useGammaCorrection = !useGammaCorrection;
+		}
+
+		if (keyCode == GLFW_KEY_R && action == GLFW_PRESS)
+		{
+			dirLight->diffuse += 0.2;
 		}
 
 		camera->keyCallBack(keyCode, action);

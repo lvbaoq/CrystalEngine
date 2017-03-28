@@ -23,7 +23,7 @@ const Material Material::ruby(Vector3(0.175f, 0.012f, 0.012f),
 
 void crystal::Material::setDiffuseMap(const char * const path)
 {
-	diffuseMap.createTexture(path);
+	diffuseMap.createTexture(path,true);//Diffuse map is usually in srgb format
 }
 
 void crystal::Material::setSpecularMap(const char * const path)
@@ -33,7 +33,7 @@ void crystal::Material::setSpecularMap(const char * const path)
 
 void crystal::Material::setEmissionMap(const char * const path)
 {
-	emissionMap.createTexture(path);
+	emissionMap.createTexture(path,true);//Emission map is usually in srgb format
 }
 
 void crystal::Material::initTextures()
@@ -52,14 +52,15 @@ Material Material::pureColorMaterial(Vector3 color)
 	return m;
 }
 
-void Texture::createTexture(const char* const location)
+void Texture::createTexture(const char* const location,bool isSRGB)
 {
+	GLuint type = isSRGB ? GL_SRGB:GL_RGB;
 	glGenTextures(1, &texture);
 	unsigned char* image;
 	image = SOIL_load_image(location, &width, &height, 0, SOIL_LOAD_RGB);
 	//Set texture
 	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+	glTexImage2D(GL_TEXTURE_2D, 0, type, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	SOIL_free_image_data(image);
 	//Set texture wrapping and filtering model
@@ -83,7 +84,7 @@ void crystal::SkyBox::loadCubeMap()
 		image = SOIL_load_image(faces[i], &width, &height, 0, SOIL_LOAD_RGB);
 		glTexImage2D(
 			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
-			GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+			GL_SRGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 		SOIL_free_image_data(image);
 	}
 	//Set texture attributes

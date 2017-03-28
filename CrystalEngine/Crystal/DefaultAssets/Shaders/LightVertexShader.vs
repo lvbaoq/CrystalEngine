@@ -7,11 +7,13 @@ out vec3 Normal;
 out vec3 FragPos;
 out vec2 TexCoords;
 out vec3 vColor;
+out vec4 FragPosLightSpace;
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 uniform vec4 bodyColor;
+uniform mat4 lightSpaceMatrix;
 
 void main()
 {
@@ -20,4 +22,5 @@ void main()
     Normal = mat3(transpose(inverse(model))) * normal;  
     vColor = vec3(bodyColor.x,bodyColor.y,bodyColor.z);
 	TexCoords = texCoords;
+	FragPosLightSpace = lightSpaceMatrix * vec4(FragPos,1.0);
 } 

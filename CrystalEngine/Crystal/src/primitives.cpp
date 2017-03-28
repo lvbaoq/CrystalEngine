@@ -134,18 +134,34 @@ Explosion::~Explosion()
 	particles.clear();
 }
 
+glm::mat4 DirectionalLight::getLightSpaceMatrix()
+{
+	glm::mat4 projection, view, space;
+	projection = glm::ortho(orthoLeft, orthoRight, orthoBottom, orthoTop,near_plane,far_plane);
+	view = glm::lookAt(position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	space = projection * view;
+	return space;
+}
+
 void DirectionalLight::setLightUniform(GLuint program)
 {
+	GLint viewPosLoc = glGetUniformLocation(program, "viewPos");
+	glUniform3f(viewPosLoc, viewPostion.x, viewPostion.y, viewPostion.z);
+
+	glUniform3f(glGetUniformLocation(program, "dirLight.position"), position.x, position.y, position.z);
 	glUniform3f(glGetUniformLocation(program, "dirLight.direction"), direction.x, direction.y, direction.z);
 	glUniform3f(glGetUniformLocation(program, "dirLight.ambient"), ambient.x, ambient.y, ambient.z);
 	glUniform3f(glGetUniformLocation(program, "dirLight.diffuse"), diffuse.x, diffuse.y, diffuse.z);
 	glUniform3f(glGetUniformLocation(program, "dirLight.specular"), specular.x, specular.y, specular.z);
+
+	glUniformMatrix4fv(glGetUniformLocation(program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(getLightSpaceMatrix()));
 }
 
 void DirectionalLight::setViewPosition(float x, float y, float z)
 {
-	GLint viewPosLoc = glGetUniformLocation(Explosion::program, "viewPos");//Bad code here. Need refactor
-	glUniform3f(viewPosLoc,x,y,z);
+	viewPostion.x = x;
+	viewPostion.y = y;
+	viewPostion.z = z;
 }
 
 //Helper functions

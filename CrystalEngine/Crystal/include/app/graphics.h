@@ -15,10 +15,15 @@
 #define DEFAULT_SKYBOX_FACE_BACK "./DefaultAssets/Skybox/back.jpg"
 #define DEFAULT_SKYBOX_FACE_FRONT "./DefaultAssets/Skybox/front.jpg"
 
+//Shader paths
 #define POST_PROCESSING_VSHADER_PATH "./DefaultAssets/Shaders/PostProcessingVertexShader.vs"
 #define POST_PROCESSING_FRAG_PATH_INVERSION "./DefaultAssets/Shaders/InversionEffect.fs"
 #define POST_PROCESSING_FRAG_PATH_GRAYSCALE "./DefaultAssets/Shaders/GrayScaleEffect.fs"
 #define POST_PROCESSING_FRAG_PATH_KERNEL "./DefaultAssets/Shaders/KernelEffect.fs"
+#define POST_PROCESSING_FRAG_PATH_NORMAL "./DefaultAssets/Shaders/PostProcessingNormal.fs"
+#define DEPTH_VERTEX_PATH "./DefaultAssets/Shaders/defaultDepthShader.vs"
+#define EMPTY_FRAG_PATH "./DefaultAssets/Shaders/emptyFragmentShader.fs"
+
 #define KERNEL_VALUE_NUM 9
 #define DEFAULT_KERNEL_OFFSET (1.0f/300.0f)
 #define KERNEL_OFFSET_UNIFORM "offset"
@@ -51,7 +56,7 @@ namespace crystal
 		* Create a texture using given texture location
 		* The image is then binded to the texture object 'texture'
 		*/
-		void createTexture(const char* const location);
+		void createTexture(const char* const location, bool isSRGB = false);
 
 		Texture() :texture(0), created(false), wrap_s_model(GL_REPEAT), wrap_t_model(GL_REPEAT),
 			min_filter_model(GL_LINEAR_MIPMAP_LINEAR), mag_filter_model(GL_NEAREST_MIPMAP_NEAREST)
