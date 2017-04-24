@@ -1,15 +1,13 @@
 //Memory leak test
 #define _CRTDBG_MAP_ALLOC
 #ifdef _DEBUG
-#define new   new(_NORMAL_BLOCK, __FILE__, __LINE__)
+//#define new   new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #endif
 #include <stdlib.h>
 #include <crtdbg.h>
 
 #include <app\app.h>
 #include <iostream>
-#include <app\shader.h>
-#include <app\glm\gtc\type_ptr.inl>
 #include <app\defaultVertices.h>
 
 #define MODEL_MATRIX_UNIFORM_NAME "model"
@@ -37,6 +35,7 @@ GLuint generateAttachmentTexture(GLboolean depth, GLboolean stencil);
 
 //Render all game objects in current game world.
 void renderWorld(Shader &shader,bool depthOnly = false);
+void renderInstances(Shader &shader, bool depthOnly = false);
 
 int main()
 {
@@ -101,6 +100,8 @@ int main()
 	Shader skyboxShader{ DEFAULT_SKYBOX_VERTEX_SHADER_PATH,DEFAULT_SKYBOX_FRAGMENT_SHADER_PATH };
 	Shader postShader{ POST_PROCESSING_VSHADER_PATH,POST_PROCESSING_FRAG_PATH_NORMAL };
 	Shader depthShader{ DEPTH_VERTEX_PATH ,EMPTY_FRAG_PATH };
+	Shader treeShader{VERTEX_SHADER_INSTANCE,LIGHT_FRAGMENT_SHADER_PATH };
+	Shader instanceDepthShader{ DEPTH_SHADER_INSTANCE ,EMPTY_FRAG_PATH };
 
 	#pragma region "setVAOs"
 	//Put vertices of primitive shapes into vetex buffer
@@ -219,15 +220,28 @@ int main()
 
 	//Set texture units
 	shader.useShader();
-	glUniform1i(glGetUniformLocation(shader.program, "material.diffuse"), 0);
-	glUniform1i(glGetUniformLocation(shader.program, "material.specular"), 1);
-	glUniform1i(glGetUniformLocation(shader.program, "material.emission"), 2);
+	glUniform1i(glGetUniformLocation(shader.program, "material.texture_diffuse1"), 0);
+	glUniform1i(glGetUniformLocation(shader.program, "material.texture_specular1"), 1);
+	glUniform1i(glGetUniformLocation(shader.program, "material.texture_emission"), 2);
 	glUniform1i(glGetUniformLocation(shader.program, "shadowMap"), 3);
 	glUseProgram(0);
+	treeShader.useShader();
+	glUniform1i(glGetUniformLocation(treeShader.program, "material.texture_diffuse1"), 4);
+	glUniform1i(glGetUniformLocation(treeShader.program, "material.texture_specular1"), 5);
+	glUniform1i(glGetUniformLocation(treeShader.program, "material.texture_emission"), 6);
+	glUniform1i(glGetUniformLocation(treeShader.program, "shadowMap"), 7);
+	glUseProgram(0);
+
 #pragma endregion
 
 	//Set up application
 	application->start();
+
+	// Set Vertex Buffer Object for instancing
+	for (crystal::InstanceList instance : application->instanceList)
+	{
+		instance.setUpVAO(application->getModel(instance.modelID));
+	}
 
 	//Load skybox
 	application->skybox.loadCubeMap();
@@ -261,6 +275,7 @@ int main()
 
 		//Render to depth texture from dirLight's perspective
 		glCullFace(GL_FRONT);//Peter panning
+		
 		depthShader.useShader();
 		glUniformMatrix4fv(glGetUniformLocation(depthShader.program, "lightSpaceMatrix"),
 			1, GL_FALSE, glm::value_ptr(application->dirLight->getLightSpaceMatrix()));
@@ -268,6 +283,19 @@ int main()
 		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		renderWorld(depthShader,true);
+		
+		//Instance
+		if (!application->instanceList.empty())
+		{
+			instanceDepthShader.useShader();
+			glUniformMatrix4fv(glGetUniformLocation(instanceDepthShader.program, "lightSpaceMatrix"),
+				1, GL_FALSE, glm::value_ptr(application->dirLight->getLightSpaceMatrix()));
+			glViewport(0, 0, application->depthMapWidth, application->depthMapHeight);
+			glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+			glClear(GL_DEPTH_BUFFER_BIT);
+			renderInstances(instanceDepthShader, true);
+		}		
+
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glCullFace(GL_BACK);
 
@@ -317,6 +345,9 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, depthTexture);
 		renderWorld(shader);
 		
+		glActiveTexture(GL_TEXTURE7);
+		glBindTexture(GL_TEXTURE_2D, depthTexture);
+
 		//Update particles
 		application->pworld->runPhysics(deltaTime);
 		
@@ -327,6 +358,21 @@ int main()
 		for (crystal::PEffectPtr pe : application->pworld->particleEffects)
 		{
 			pe->drawEffect(deltaTime);
+		}
+		glEnable(GL_CULL_FACE);
+		//Draw Instances
+		if (!application->instanceList.empty())
+		{
+			treeShader.useShader();
+			//Set direction light
+			if (application->dirLight)
+			{
+				application->dirLight->setLightUniform(treeShader.program);
+			}
+			//Set view and projection matrix
+			glUniformMatrix4fv(glGetUniformLocation(treeShader.program, VIEW_MATRIX_UNIFORM_NAME), 1, GL_FALSE, glm::value_ptr(view));
+			glUniformMatrix4fv(glGetUniformLocation(treeShader.program, PROJECTION_MATRIX_UNIFORM_NAME), 1, GL_FALSE, glm::value_ptr(projection));
+			renderInstances(treeShader);
 		}
 
 		//Draw Skybox
@@ -343,7 +389,7 @@ int main()
 		// skybox cube
 		glBindVertexArray(skyboxVAO);
 		glActiveTexture(GL_TEXTURE0);
-		glUniform1i(glGetUniformLocation(shader.program, "skybox"), 0);
+		glUniform1i(glGetUniformLocation(skyboxShader.program, "skybox"), 0);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, application->skybox.getCubeTexture());
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
@@ -396,6 +442,7 @@ int main()
 	glDeleteFramebuffers(1, &framebuffer);
 	shader.deleteShader();
 	skyboxShader.deleteShader();
+	treeShader.deleteShader();
 	glfwTerminate();
 
 	return 0;
@@ -437,6 +484,23 @@ void renderWorld(Shader &shader,bool depthOnly)
 	}
 
 	glBindVertexArray(0);
+
+	//Draw model
+	for (int i = 0; i < application->modelList.size(); i++)
+	{
+		application->modelList[i].draw(shader);
+	}
+}
+
+void renderInstances(Shader &shader, bool depthOnly)
+{
+	shader.useShader();
+	glEnable(GL_CULL_FACE);
+	//Draw Instances
+	for (crystal::InstanceList instances : application->instanceList)
+	{
+		instances.draw(application->getModel(instances.modelID), shader);
+	}
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)

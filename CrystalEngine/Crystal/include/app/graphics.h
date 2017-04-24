@@ -23,6 +23,8 @@
 #define POST_PROCESSING_FRAG_PATH_NORMAL "./DefaultAssets/Shaders/PostProcessingNormal.fs"
 #define DEPTH_VERTEX_PATH "./DefaultAssets/Shaders/defaultDepthShader.vs"
 #define EMPTY_FRAG_PATH "./DefaultAssets/Shaders/emptyFragmentShader.fs"
+#define VERTEX_SHADER_INSTANCE "./DefaultAssets/Shaders/TreeVertexShader.vs"
+#define DEPTH_SHADER_INSTANCE "./DefaultAssets/Shaders/InstanceDepthShader.vs"
 
 #define KERNEL_VALUE_NUM 9
 #define DEFAULT_KERNEL_OFFSET (1.0f/300.0f)
@@ -30,8 +32,10 @@
 #define KERNEL_UNIFORM "kernel"
 
 #include <app\GL\glew.h>
-#include "SOIL\SOIL.h"
+#include <app\SOIL\SOIL.h>
+#include <app\glm\glm.hpp>
 #include <app\shader.h>
+#include <string>
 
 namespace crystal
 {
@@ -52,6 +56,8 @@ namespace crystal
 		bool created;
 
 	public:
+		std::string path;
+		std::string type;
 		/**
 		* Create a texture using given texture location
 		* The image is then binded to the texture object 'texture'

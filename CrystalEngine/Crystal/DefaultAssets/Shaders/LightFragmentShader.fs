@@ -5,9 +5,9 @@ struct Material {
 	vec3 ambientColor;
 	vec3 specularColor;
 
-	sampler2D diffuse;
-    sampler2D specular;
-	sampler2D emission;
+	sampler2D texture_diffuse1;
+    sampler2D texture_specular1;
+	sampler2D texture_emission;
 
     float shininess;
 }; 
@@ -46,12 +46,12 @@ void main()
     // Properties
     vec3 norm = normalize(Normal);
     vec3 viewDir = normalize(viewPos - FragPos);
-    
+ 
     // Phase 1: Directional lighting
     vec3 result = CalcDirLight(dirLight, norm, viewDir); 
      
     color = vec4(result, 1.0);
-	
+
 }
 
 // Calculates the color when using a directional light.
@@ -64,10 +64,10 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     // Combine results
-    vec3 ambient = light.ambient * material.ambientColor * vec3(texture(material.diffuse, TexCoords));
-    vec3 diffuse = light.diffuse * material.diffuseColor * diff * vec3(texture(material.diffuse, TexCoords));
-    vec3 specular = light.specular *  material.specularColor * spec * vec3(texture(material.specular,TexCoords));
-    vec3 emission = vec3(texture(material.emission,TexCoords));
+    vec3 ambient = light.ambient * (vec3(texture(material.texture_diffuse1, TexCoords)) * material.ambientColor);
+    vec3 diffuse = light.diffuse * diff * (vec3(texture(material.texture_diffuse1, TexCoords)) * material.diffuseColor);
+    vec3 specular = light.specular * spec * (vec3(texture(material.texture_specular1,TexCoords)) * material.specularColor);
+    vec3 emission = vec3(texture(material.texture_emission,TexCoords));
 
 	//Calculate shadow
 	float shadow = CalcShadow(light,normal,FragPosLightSpace);

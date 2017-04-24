@@ -54,13 +54,14 @@ Material Material::pureColorMaterial(Vector3 color)
 
 void Texture::createTexture(const char* const location,bool isSRGB)
 {
+	path = location;
 	GLuint type = isSRGB ? GL_SRGB:GL_RGB;
 	glGenTextures(1, &texture);
 	unsigned char* image;
-	image = SOIL_load_image(location, &width, &height, 0, SOIL_LOAD_RGB);
+	image = SOIL_load_image(location, &width, &height, 0, SOIL_LOAD_RGBA);
 	//Set texture
 	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, type, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+	glTexImage2D(GL_TEXTURE_2D, 0, type, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	SOIL_free_image_data(image);
 	//Set texture wrapping and filtering model

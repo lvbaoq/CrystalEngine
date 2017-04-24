@@ -6,9 +6,7 @@
 //GLFW
 #include "GLFW\glfw3.h"
 
-#include "glm\glm.hpp"
-#include "glm\gtc\matrix_transform.inl"
-#include "graphics.h"
+#include "model.h"
 
 #define BOX_VERTEX_NUMBER 36
 #define PLANE_VERTEX_NUMBER 6
@@ -122,6 +120,7 @@ public:
 	static GLuint planeVAO;
 	int drawSizeX;
 	int drawSizeY;
+	int scale;//Scale the default draw size
 	crystal::CollisionPlane planeCollider;
 	crystal::Vector3 normal;
 
@@ -129,7 +128,7 @@ public:
 		crystal::real pX, crystal::real pY, crystal::real pZ,
 		crystal::Material m = crystal::Material::defaultMaterial,
 		crystal::real drawSizeX = PLANE_DRAW_SIZE, crystal::real drawSizeY = PLANE_DRAW_SIZE) :
-		drawSizeX(drawSizeX),drawSizeY(drawSizeY)
+		drawSizeX(drawSizeX),drawSizeY(drawSizeY),scale(1)
 	{
 		position = crystal::Vector3(pX, pY, pZ);
 		normal = planeNormal;
@@ -231,4 +230,3 @@ public:
 
 	void setViewPosition(float x,float y,float z);
 };
-

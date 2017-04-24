@@ -15,6 +15,8 @@ namespace crystal{
 		static real getRandom(real bound);
 		/* Use rand() to generate a real value between min and max */
 		static real getRandom(real min, real max);
+		//Set seed for srand()
+		static void SetSeed(unsigned seed) { srand(seed); }
 		static bool getRandomBool();
 		/**
 		* left bitwise rotation

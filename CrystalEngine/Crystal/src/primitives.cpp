@@ -1,5 +1,4 @@
 #include <app\primitives.h>
-#include <app\glm\gtc\type_ptr.inl>
 
 GLuint Box::boxVAO = 0;
 GLuint Plane::planeVAO = 0;
@@ -49,7 +48,7 @@ glm::mat4 Plane::getModelMatrix()
 	model = glm::rotate(model,crystal::radians(90), glm::vec3(1.0f, 0.0f, 0.0f));
 
 	//Scale the matrix
-	glm::vec3 glScale(drawSizeX, drawSizeX,1.0f);
+	glm::vec3 glScale(scale*drawSizeX, scale*drawSizeX,1.0f);
 	model = glm::scale(model, glScale);
 
 	return model;

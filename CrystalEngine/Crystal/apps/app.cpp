@@ -41,7 +41,49 @@ void Application::mouseMove(float x, float y) {}
 
 void Application::scroll(float xoffset, float yoffset){}
 
+int Application::createModel(char * path)
+{
+	modelList.emplace_back(path);
+	return modelList.size()-1;
+}
 
+float getOffset(float max = 0.5f)
+{
+	float result = Random::getRandom(0, max);
+	return Random::getRandomBool() ? result : -result;
+}
+
+void Application::areaInstancing(int modelId, float posY, float startX, float startZ, float areaWidth, float areaHeight, int numRow, int numColumn, float minScale, float maxScale, bool randomRotation)
+{
+	InstanceList result{modelId,numRow*numColumn };
+	Random::SetSeed(glfwGetTime());
+
+	float wOffset = areaWidth / (numRow+1);
+	float hOffset = areaHeight / (numColumn + 1);
+
+	for (int r = 0; r < numRow; r++)
+	{
+		float posZ = startZ + (r + 1) * hOffset;
+		for (int c = 0; c < numColumn; c++)
+		{
+			glm::mat4 model;
+			//Transition
+			float posX = startX + (c + 1) * wOffset;
+			//Add a small random offset
+			model = glm::translate(model, glm::vec3(posX + getOffset(wOffset/3.0f),posY, posZ + getOffset(hOffset/3.0f)));
+			//Rotation
+			if (randomRotation) 
+				model = glm::rotate(model,Random::getRandom(360), glm::vec3(0.0f,1.0f,0.0f));
+			//Scale
+			float factor = Random::getRandom(minScale, maxScale);
+			model = glm::scale(model, glm::vec3(factor));
+			//Store result
+			result.modelMatrixList.push_back(model);
+		}
+	}
+	//put result in list
+	instanceList.push_back(std::move(result));
+}
 
 Box* createBox(crystal::Vector3 position, crystal::Vector3 halfSize,
 	crystal::Material m,bool addCollider,bool canSleep)

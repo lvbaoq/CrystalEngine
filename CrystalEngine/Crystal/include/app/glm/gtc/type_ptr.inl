@@ -1,6 +1,5 @@
 /// @ref gtc_type_ptr
 /// @file glm/gtc/type_ptr.inl
-
 #include <cstring>
 
 namespace glm

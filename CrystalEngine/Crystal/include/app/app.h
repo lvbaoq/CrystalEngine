@@ -11,13 +11,10 @@
 
 //Camera
 #include <app\camera.h>
-//Primitive
-#include <app\primitives.h>
 
 //Crystal Engine
 #include <crystal\crystal.h>
 //Graphics
-#include <app\graphics.h>
 #include <memory>
 
 #define DEFAULT_SCREEN_WIDTH 800
@@ -78,6 +75,8 @@ public:
 	int depthMapHeight;
 
 	crystal::Vector3 worldSize;
+	std::vector<crystal::Model> modelList;
+	std::vector<crystal::InstanceList> instanceList;
 
 	Application(int width = DEFAULT_SCREEN_WIDTH,int height = DEFAULT_SCREEN_HEIGHT,
 		int maxContactNum = DEFAULT_MAX_CONTACT_NUM,
@@ -204,7 +203,16 @@ public:
 	*/
 	void renderText(float x, float y, const char *text, void* font = NULL);
 
+	int createModel(char* path);
 
+	crystal::Model& getModel(int index) { return modelList[index]; };
+
+	/**
+	 * Randomly instancing a model in an area
+	 * Result is stored in the 'instanceList' vector
+	 */
+	void areaInstancing(int modelId,float posZ,float startX,float startY,float areaWidth,float areaHeight,
+		int numRow,int numColumn,float minScale,float maxScale,bool randomRotation = true);
 };
 
 /* Some helper functions */
